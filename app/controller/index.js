@@ -14,4 +14,5 @@ const handlers = new CustomTaskHandler(kc);
 require('./handlers/microsoft-teams')(handlers);
 require('./handlers/slack')(handlers);
 require('./handlers/wait')(handlers);
+require('./handlers/github-status')(handlers);
 handlers.start();

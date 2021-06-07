@@ -28,6 +28,25 @@ spec:
       params:
       - name: message
         value: "Teams notification from Serval Tekton Controller!"
+    - name: github-status
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: GithubStatus
+      params:
+      - name: commit
+        value: "f4c079efc7d4ad9686d1a06e4d01b3afe84ede33"
+      - name: owner
+        value: GijsvanDulmen
+      - name: repository
+        value: tekton-serval
+      - name: status
+        value: pending
+      - name: url
+        value: "https://github.com/GijsvanDulmen/tekton-serval"
+      - name: installation-id
+        value: "17456888"
+      - name: context
+        value: "cicd/serval"
     - name: unknown-custom-task
       runAfter:
       - teams-notification
