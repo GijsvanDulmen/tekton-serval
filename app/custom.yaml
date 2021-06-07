@@ -1,0 +1,38 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: serval-test
+  namespace: pipelines
+spec:
+  tasks:
+    - name: slack-notification
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackNotification
+      params:
+      - name: channel
+        value: "#tekton-dev"
+      - name: message
+        value: ":ok_hand: Send from Serval!"
+    - name: wait
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: Wait
+      params:
+      - name: waitFor
+        value: "5"
+    - name: teams-notification
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: TeamsNotification
+      params:
+      - name: message
+        value: "Teams notification from Serval Tekton Controller!"
+    - name: unknown-custom-task
+      runAfter:
+      - teams-notification
+      - slack-notification
+      - wait
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: Unknown      
