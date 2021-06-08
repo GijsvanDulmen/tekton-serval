@@ -7,26 +7,14 @@ module.exports = handlers => {
         }
     
         const webhook = new IncomingWebhook(process.env.SLACK_WEBHOOK_URL);
-    
-        let message;
-        let channel;
-        params.forEach(param => {
-            if (param.name == 'channel') {
-                channel = param.value;
-            } else if (param.name == 'message') {
-                message = param.value;
-            }
-        })
-    
-        if ( message == undefined || channel == undefined ) {
-            return Promise.reject('message or channel parameter missing');
-        }
-    
         return webhook.send({
-            text: message,
+            text: params.message,
             username: 'TektonSlackBot',
             icon_emoji: ':tekton:',
-            channel: channel
+            channel: params.channel
         });
-    });
+    }, [
+        { name: 'channel' },
+        { name: 'message' },
+    ], 'slack');
 };

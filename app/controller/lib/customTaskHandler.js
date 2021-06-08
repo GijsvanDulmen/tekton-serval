@@ -7,10 +7,14 @@ module.exports = class CustomHandler {
         this.watcher = new k8s.Watch(kc);
         this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
         this.handlers = {};
+        this.paramSpecs = {};
+        this.handlerPrefix = {};
     }
 
-    addHandler(name, handler) {
+    addHandler(name, handler, params, prefix) {
         this.handlers[name] = handler;
+        this.paramSpecs[name] = params;
+        this.handlerPrefix[name] = prefix;
     }
 
     getPatch(isSuccesfull, message, reason) {
@@ -52,11 +56,41 @@ module.exports = class CustomHandler {
                 }
 
                 if ( obj && obj.spec && obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
-                    // console.log(JSON.stringify(obj, null, 2));
+                    // console.log(JSON.stringify(obj.metadata.annotations, null, 2));
                     // console.log('-----');
         
                     if ( this.handlers[obj.spec.ref.kind] ) {
-                        this.handlers[obj.spec.ref.kind](obj.spec.params, this.customObjectsApi).then(() => {
+                        let params = {};
+                        let prefix = this.handlerPrefix[obj.spec.ref.kind];
+
+                        this.paramSpecs[obj.spec.ref.kind].forEach(paramSpec => {
+                            if ( paramSpec.default != undefined ) {
+                                params[paramSpec.name] = paramSpec.default;
+                            }
+
+                            // check if there is an annotation
+                            Object.keys(obj.metadata.annotations).forEach(key => {
+                                if ( key == 'serval.dev/'+prefix+"-"+paramSpec.name ) {
+                                    params[paramSpec.name] = obj.metadata.annotations[key];
+                                }
+                            });
+
+                            // explicit annotation
+                            obj.spec.params.forEach(param => {
+                                if ( param.name == paramSpec.name ) {
+                                    params[param.name] = param.value;
+                                }
+                            });
+                        });
+
+                        // check if all params are there
+                        if ( this.paramSpecs[obj.spec.ref.kind].length != Object.keys(params).length ) {
+                            const patch = this.getFailurePatch("Parameters missing, consult documentation");
+                            this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
+                            return;
+                        }
+
+                        this.handlers[obj.spec.ref.kind](params, this.customObjectsApi).then(() => {
                             const patch = this.getSuccessPatch();
                             this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
                         }).catch(err => {

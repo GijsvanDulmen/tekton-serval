@@ -10,10 +10,8 @@ spec:
         apiVersion: serval.dev/v1
         kind: SlackNotification
       params:
-      - name: channel
-        value: "#tekton-dev"
       - name: message
-        value: ":ok_hand: Send from Serval!"
+        value: ":ok_hand: Send from Serval from run $(context.pipelineRun.name)!"
     - name: wait
       taskRef:
         apiVersion: serval.dev/v1
@@ -27,7 +25,7 @@ spec:
         kind: TeamsNotification
       params:
       - name: message
-        value: "Teams notification from Serval Tekton Controller!"
+        value: "Teams notification from Serval Tekton Controller from run $(context.pipelineRun.name)!"
     - name: github-status
       taskRef:
         apiVersion: serval.dev/v1
@@ -35,16 +33,10 @@ spec:
       params:
       - name: commit
         value: "f4c079efc7d4ad9686d1a06e4d01b3afe84ede33"
-      - name: owner
-        value: GijsvanDulmen
-      - name: repository
-        value: tekton-serval
       - name: status
         value: pending
       - name: url
         value: "https://github.com/GijsvanDulmen/tekton-serval"
-      - name: installation-id
-        value: "17456888"
       - name: context
         value: "cicd/serval"
     - name: unknown-custom-task
