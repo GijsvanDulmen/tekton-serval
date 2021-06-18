@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+spec:
+  pipelineSpec:
+    tasks:
+    - name: teams-notification
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: TeamsNotification
+      params:
+      - name: message
+        value: "Teams notification from Serval Tekton Controller from run $(context.pipelineRun.name)!"

@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+spec:
+  pipelineSpec:
+    tasks:
+    - name: wait
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: Wait
+      params:
+      - name: waitFor
+        value: "5"

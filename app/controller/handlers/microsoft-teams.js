@@ -1,6 +1,14 @@
 const fetch = require('node-fetch');
 
-module.exports = handlers => {
+const CustomTaskHandler = require('../lib/customTaskHandler')
+const PipelineRunHandler = require('../lib/pipelineRunHandler')
+
+/**
+ * 
+ * @param {CustomTaskHandler} handlers 
+ * @param {PipelineRunHandler} runHandlers 
+ */
+module.exports = (handlers, runHandlers) => {
     handlers.addHandler('TeamsNotification', params => {
         if ( process.env.TEAMS_WEBHOOK_URL == undefined ) {
             return Promise.reject("No teams webhook configured");

@@ -1,0 +1,18 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+  annotations:
+    serval.dev/slack-channel: "#tekton-dev"
+    serval.dev/monitor-run: 'slack'
+spec:
+  pipelineSpec:
+    tasks:
+    - name: slack-notification
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackNotification
+      params:
+      - name: message
+        value: ":ok_hand: Send from Serval from run $(context.pipelineRun.name)!"

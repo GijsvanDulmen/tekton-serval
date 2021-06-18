@@ -1,7 +1,14 @@
 const { createAppAuth } = require("@octokit/auth-app");
 const fetch = require('node-fetch');
+const CustomTaskHandler = require('../lib/customTaskHandler')
+const PipelineRunHandler = require('../lib/pipelineRunHandler')
 
-module.exports = handlers => {
+/**
+ * 
+ * @param {CustomTaskHandler} handlers 
+ * @param {PipelineRunHandler} runHandlers 
+ */
+module.exports = (handlers, runHandlers) => {
     handlers.addHandler('GithubStatus', params => {
         if ( process.env.GITHUB_APP_KEY == undefined ) {
             return Promise.reject("No github app key configured");
