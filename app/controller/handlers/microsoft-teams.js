@@ -18,14 +18,14 @@ module.exports = (handlers, runHandlers) => {
         minTime: 250
     });
 
-    
     const send = (params, message) => {
         return limiter.schedule(() => {
             return fetch(params.webhookUrl, {
                 method: 'post',
                 body:    JSON.stringify({ text: message }),
                 headers: { 'Content-Type': 'application/json' },
-            });
+            })
+            .then(() => {}); // no results
         });
     };
 

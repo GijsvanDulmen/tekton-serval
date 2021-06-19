@@ -17,7 +17,7 @@ module.exports = class CustomHandler extends CustomObject {
         this.handlerPrefix[name] = prefix;
     }
 
-    getPatch(isSuccesfull, message, reason) {
+    getPatch(isSuccesfull, message, reason, results) {
         const now = new Date().toISOString();
         return [
             {
@@ -34,18 +34,19 @@ module.exports = class CustomHandler extends CustomObject {
                             type: "Succeeded"
                         }
                     ],
-                    startTime: now
+                    startTime: now,
+                    results: results
                 }
             }
         ];
     }
 
-    getSuccessPatch() {
-        return this.getPatch(true, "Successfull", "Successfull");
+    getSuccessPatch(results) {
+        return this.getPatch(true, "Successfull", "Successfull", results);
     }
 
     getFailurePatch(message) {
-        return this.getPatch(false, message, message);
+        return this.getPatch(false, message, message, []);
     }
 
     getFromTaskSpec(paramSpec, params, spec) {
@@ -107,8 +108,18 @@ module.exports = class CustomHandler extends CustomObject {
                                 return;
                             }
 
-                            this.handlers[obj.spec.ref.kind](params, this.customObjectsApi).then(() => {
-                                const patch = this.getSuccessPatch();
+                            this.handlers[obj.spec.ref.kind](params, this.customObjectsApi).then(results => {
+                                let taskResults = [];
+                                if ( results != undefined ) {
+                                    Object.keys(results).forEach(key => {
+                                        taskResults.push({
+                                            name: key,
+                                            value: results[key]
+                                        });
+                                    });
+                                }
+                                
+                                const patch = this.getSuccessPatch(taskResults);
                                 this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
                             }).catch(err => {
                                 console.log(err);

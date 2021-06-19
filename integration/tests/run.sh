@@ -12,7 +12,7 @@ do
   echo "Processing ${test} test..."
 
   export NAME=`kubectl -n ${NAMESPACE} create -f ${test} -o jsonpath='{.metadata.name}'`
-  kubectl -n ${NAMESPACE} wait --for=condition=Succeeded --timeout=4s pipelinerun/${NAME}
+  kubectl -n ${NAMESPACE} wait --for=condition=Succeeded --timeout=20s pipelinerun/${NAME}
   kubectl -n ${NAMESPACE} delete pipelinerun/${NAME}
   ((i=i+1))
 done

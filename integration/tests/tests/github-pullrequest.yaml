@@ -1,0 +1,70 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+  annotations:
+    serval.dev/github-pullrequest-owner: "GijsvanDulmen"
+    serval.dev/github-pullrequest-repository: "tekton-serval"
+    serval.dev/github-pullrequest-installation-id: "17456888"
+    serval.dev/wait-waitFor: "3"
+spec:
+  timeout: "0h0m40s"
+  pipelineSpec:
+    tasks:
+    - name: github-open-pullrequest
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: GithubOpenPullRequest
+      params:
+      - name: title
+        value: Title
+      - name: head
+        value: deployment-test
+      - name: base
+        value: main
+      - name: body
+        value: "Body"
+    - name: wait-after-open
+      runAfter:
+      - github-open-pullrequest
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: Wait
+    - name: github-add-comment
+      runAfter:
+      - github-open-pullrequest
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: GithubAddComment
+      params:
+      - name: body
+        value: "Comment!"
+      - name: pull_number
+        value: $(tasks.github-open-pullrequest.results.number)
+    - name: github-add-reviwer
+      runAfter:
+      - github-open-pullrequest
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: GithubAddReviewer
+      params:
+      - name: reviewer
+        value: "GijsvanDulmen"
+      - name: pull_number
+        value: $(tasks.github-open-pullrequest.results.number)
+    - name: github-update-pullrequest
+      runAfter:
+      - wait-after-open
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: GithubUpdatePullRequest
+      params:
+      - name: title
+        value: Title After Update
+      - name: body
+        value: "Body After Update"
+      - name: state
+        value: closed
+      - name: pull_number
+        value: $(tasks.github-open-pullrequest.results.number)

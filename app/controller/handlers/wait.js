@@ -9,7 +9,7 @@ const PipelineRunHandler = require('../lib/pipelineRunHandler')
 module.exports = (handlers, runHandlers) => {
     handlers.addHandler('Wait', params => {
         return new Promise((res, rej) => {
-            setTimeout(() => res(true), parseFloat(params.waitFor)*1000);
+            setTimeout(() => res({}), parseFloat(params.waitFor)*1000);
         });
     }, [
         { name: 'waitFor' }

@@ -23,3 +23,5 @@ spec:
         value: pending
       - name: url
         value: "https://github.com/GijsvanDulmen/tekton-serval"
+      - name: description
+        value: "ASD"

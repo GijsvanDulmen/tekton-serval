@@ -17,7 +17,9 @@ const runHandlers = new PipelineRunHandler(kc);
 require('./handlers/microsoft-teams')(handlers, runHandlers);
 require('./handlers/slack')(handlers, runHandlers);
 require('./handlers/wait')(handlers, runHandlers);
-require('./handlers/github-status')(handlers, runHandlers);
+require('./handlers/github/status')(handlers, runHandlers);
+require('./handlers/github/deployment')(handlers, runHandlers);
+require('./handlers/github/pullrequest')(handlers, runHandlers);
 
 handlers.start();
 runHandlers.start();

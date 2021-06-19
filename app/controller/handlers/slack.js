@@ -13,7 +13,7 @@ const Bottleneck = require("bottleneck");
 module.exports = (handlers, runHandlers) => {
 
     // https://api.slack.com/docs/rate-limits#rate-limits__limits-when-posting-messages
-    // set the min time this way to allow for reduced stress on Slack
+    // set the min time this way to allow for reduced stress on the api
     const limiter = new Bottleneck({
         minTime: 1000
     });
@@ -26,7 +26,7 @@ module.exports = (handlers, runHandlers) => {
                 username: params.username,
                 icon_emoji: params.icon,
                 channel: params.channel
-            });
+            }).then(() => {}); // no results
         });        
     };
 
