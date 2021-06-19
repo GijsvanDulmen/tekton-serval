@@ -1,41 +1,38 @@
-const k8s = require('@kubernetes/client-node');
+const CustomObject = require('./customObject');
 
-module.exports = class PipelineRunHandler {
+module.exports = class PipelineRunHandler extends CustomObject {
     constructor(kc) {
-        this.watcher = new k8s.Watch(kc);
-        this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
-
+        super(kc);
+        
         this.events = {
             started: [],
             succeeded: [],
             failed: [],
             cancelled: []
-        }
+        };
     }
 
-    addStarted(on, handler) {
-        this.events.started.push({ on: on, handler: handler });
+    addStarted(on, handler, params) {
+        this.events.started.push({ on: on, handler: handler, params: params });
     }
 
-    addSucceeded(on, handler) {
-        this.events.succeeded.push({ on: on, handler: handler });
+    addSucceeded(on, handler, params) {
+        this.events.succeeded.push({ on: on, handler: handler, params: params });
     }
 
-    addFailed(on, handler) {
-        this.events.failed.push({ on: on, handler: handler });
+    addFailed(on, handler, params) {
+        this.events.failed.push({ on: on, handler: handler, params: params });
     }
 
-    addCancelled(on, handler) {
-        this.events.cancelled.push({ on: on, handler: handler });
+    addCancelled(on, handler, params) {
+        this.events.cancelled.push({ on: on, handler: handler, params: params });
     }
 
     start() {
-        this.watcher.watch("/apis/tekton.dev/v1alpha1/pipelineruns", {}, (phase, obj) => {
+        this.watch("/apis/tekton.dev/v1alpha1/pipelineruns", (phase, obj) => {
             if ( phase == 'ADDED' ) {
                 return;
             }
-
-            console.log(obj.metadata.annotations);
 
             let monitorRun = [];
             Object.keys(obj.metadata.annotations).forEach(key => {
@@ -47,9 +44,7 @@ module.exports = class PipelineRunHandler {
             if ( monitorRun.length == 0 ) {
                 return;
             }
-
-            console.log(monitorRun);
-            
+           
             if ( obj.status && obj.status.conditions ) {
                 obj.status.conditions.forEach(condition => {
                     if ( condition.type != 'Succeeded' ) {
@@ -75,16 +70,51 @@ module.exports = class PipelineRunHandler {
                         }
                     }
 
-                    console.log(processEvent);
-
                     if ( processEvent != false ) {
                         this.events[processEvent].forEach(handler => {
                             if ( monitorRun.indexOf(handler.on) != -1 ) {
-                                handler.handler(obj);
+                                this.processHandler(handler, obj);
                             }
                         });
                     }
                 });
+            }
+        });
+    }
+
+    processHandler(handler, obj) {
+        let params = {};
+        
+        // check if there are secrets needed
+        this.fetchSecretIfNeeded(handler.params, obj.metadata.namespace).then(secret => {
+            handler.params.forEach(paramSpec => {
+                if ( paramSpec.default != undefined ) {
+                    params[paramSpec.name] = paramSpec.default;
+                }
+
+                if ( paramSpec.sources == undefined ) {
+                    paramSpec.sources = ['pipelinerun'];
+                }
+
+                // get from environment
+                params = this.getFromEnvironment(handler.on, paramSpec, params);
+
+                // get from environment
+                params = this.getFromSecret(handler.on, paramSpec, params, secret);
+                
+                // check if there is an annotation
+                params = this.getFromAnnotations(handler.on, paramSpec, params, obj.metadata);
+
+                if ( params[paramSpec.name] != undefined && paramSpec.replace ) {
+                    params[paramSpec.name] = params[paramSpec.name].replace("$name", obj.metadata.name);
+                }
+            });
+
+            // check if all params are there
+            if ( handler.params.length == Object.keys(params).length ) {
+                handler.handler(params);
+            } else {
+                console.log("params missing for run " + obj.metadata.namespace+"/"+obj.metadata.name + " for " + handler.on)
             }
         });
     }

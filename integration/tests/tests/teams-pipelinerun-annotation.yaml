@@ -1,0 +1,20 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+  annotations:
+    serval.dev/microsoft-teams-runStarted: "Run Started - Annotations"
+    serval.dev/microsoft-teams-runSucceeded: "Run Succeeded - Annotations"
+    serval.dev/monitor-run: 'microsoft-teams'
+spec:
+  timeout: "0h0m10s"
+  pipelineSpec:
+    tasks:
+    - name: wait
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: Wait
+      params:
+      - name: waitFor
+        value: "1"

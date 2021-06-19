@@ -8,6 +8,7 @@ if ( process.env.KUBERNETES_SERVICE_HOST ) {
     kc.loadFromCluster();
 } else {
     kc.loadFromDefault();
+    kc.setCurrentContext('serval-sa'); // is created during cluster setup
 }
 
 const handlers = new CustomTaskHandler(kc);

@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+spec:
+  timeout: "0h0m10s"
+  pipelineSpec:
+    tasks:
+    - name: teams-notification
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: TeamsNotification
+      params:
+      - name: message
+        value: "Serval - Secret based"

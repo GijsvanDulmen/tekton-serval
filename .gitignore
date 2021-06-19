@@ -1,4 +1,5 @@
 app/controller/run.sh
 app/controller/keys
+integration/secrets
 node_modules
 package-lock.json

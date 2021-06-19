@@ -6,11 +6,10 @@ const PipelineRunHandler = require('../lib/pipelineRunHandler')
  * @param {CustomTaskHandler} handlers 
  * @param {PipelineRunHandler} runHandlers 
  */
-
 module.exports = (handlers, runHandlers) => {
     handlers.addHandler('Wait', params => {
         return new Promise((res, rej) => {
-            setTimeout(() => res(true), parseFloat(param.waitFor)*1000);
+            setTimeout(() => res(true), parseFloat(params.waitFor)*1000);
         });
     }, [
         { name: 'waitFor' }

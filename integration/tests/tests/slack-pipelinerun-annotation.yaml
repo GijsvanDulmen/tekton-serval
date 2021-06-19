@@ -5,14 +5,17 @@ metadata:
   namespace: pipelines
   annotations:
     serval.dev/slack-channel: "#tekton-dev"
+    serval.dev/slack-runStarted: ":alarm_clock: Run Started - Annotations"
+    serval.dev/slack-runSucceeded: ":partying_face: Run Succeeded - Annotations"
     serval.dev/monitor-run: 'slack'
 spec:
+  timeout: "0h0m10s"
   pipelineSpec:
     tasks:
-    - name: slack-notification
+    - name: wait
       taskRef:
         apiVersion: serval.dev/v1
-        kind: SlackNotification
+        kind: Wait
       params:
-      - name: message
-        value: ":ok_hand: Send from Serval from run $(context.pipelineRun.name)!"
+      - name: waitFor
+        value: "1"

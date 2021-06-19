@@ -4,12 +4,13 @@ metadata:
   generateName: serval-run-
   namespace: pipelines
 spec:
+  timeout: "0h0m10s"
   pipelineSpec:
     tasks:
-    - name: teams-notification
+    - name: wait
       taskRef:
         apiVersion: serval.dev/v1
-        kind: TeamsNotification
+        kind: Wait
       params:
-      - name: message
-        value: "Teams notification from Serval Tekton Controller from run $(context.pipelineRun.name)!"
+      - name: waitFor
+        value: "2"

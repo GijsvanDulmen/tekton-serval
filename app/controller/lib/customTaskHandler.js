@@ -1,11 +1,11 @@
-const k8s = require('@kubernetes/client-node');
+const CustomObject = require('./customObject');
 
 const APIVERSION = "serval.dev/v1";
 
-module.exports = class CustomHandler {
+module.exports = class CustomHandler extends CustomObject {
     constructor(kc) {
-        this.watcher = new k8s.Watch(kc);
-        this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
+        super(kc);
+        
         this.handlers = {};
         this.paramSpecs = {};
         this.handlerPrefix = {};
@@ -48,8 +48,21 @@ module.exports = class CustomHandler {
         return this.getPatch(false, message, message);
     }
 
+    getFromTaskSpec(paramSpec, params, spec) {
+        if ( paramSpec.sources.indexOf('taskparam') != -1 ) {
+            if ( spec.params ) {
+                spec.params.forEach(param => {
+                    if ( param.name == paramSpec.name ) {
+                        params[param.name] = param.value;
+                    }
+                });
+            }
+        }
+        return params;
+    }
+
     start() {
-        this.watcher.watch("/apis/tekton.dev/v1alpha1/runs", {}, (phase, obj) => {
+        this.watch("/apis/tekton.dev/v1alpha1/runs", (phase, obj) => {
             if ( phase == 'ADDED' ) {
                 if ( obj.status && obj.status.completionTime ) {
                     return; // already done
@@ -58,60 +71,57 @@ module.exports = class CustomHandler {
                 if ( obj && obj.spec && obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
                     // console.log(JSON.stringify(obj.metadata.annotations, null, 2));
                     // console.log('-----');
-        
+
                     if ( this.handlers[obj.spec.ref.kind] ) {
                         let params = {};
                         let prefix = this.handlerPrefix[obj.spec.ref.kind];
 
-                        this.paramSpecs[obj.spec.ref.kind].forEach(paramSpec => {
-                            if ( paramSpec.default != undefined ) {
-                                params[paramSpec.name] = paramSpec.default;
+                        // check if there are secrets needed
+                        this.fetchSecretIfNeeded(this.paramSpecs[obj.spec.ref.kind], obj.metadata.namespace).then(secret => {
+                            this.paramSpecs[obj.spec.ref.kind].forEach(paramSpec => {
+                                if ( paramSpec.default != undefined ) {
+                                    params[paramSpec.name] = paramSpec.default;
+                                }
+
+                                if ( paramSpec.sources == undefined ) {
+                                    paramSpec.sources = ['pipelinerun', 'taskparam'];
+                                }
+
+                                // get from environment
+                                params = this.getFromEnvironment(prefix, paramSpec, params);
+
+                                // get from environment
+                                params = this.getFromSecret(prefix, paramSpec, params, secret);
+                                
+                                // check if there is an annotation
+                                params = this.getFromAnnotations(prefix, paramSpec, params, obj.metadata);
+                                
+                                // explicit annotation
+                                params = this.getFromTaskSpec(paramSpec, params, obj.spec);
+                            });
+
+                            // check if all params are there
+                            if ( this.paramSpecs[obj.spec.ref.kind].length != Object.keys(params).length ) {
+                                const patch = this.getFailurePatch("Parameters missing, consult documentation");
+                                this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
+                                return;
                             }
 
-                            // check if there is an annotation
-                            Object.keys(obj.metadata.annotations).forEach(key => {
-                                if ( key == 'serval.dev/'+prefix+"-"+paramSpec.name ) {
-                                    params[paramSpec.name] = obj.metadata.annotations[key];
-                                }
-                            });
-
-                            // explicit annotation
-                            obj.spec.params.forEach(param => {
-                                if ( param.name == paramSpec.name ) {
-                                    params[param.name] = param.value;
-                                }
-                            });
+                            this.handlers[obj.spec.ref.kind](params, this.customObjectsApi).then(() => {
+                                const patch = this.getSuccessPatch();
+                                this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
+                            }).catch(err => {
+                                console.log(err);
+                                const patch = typeof err == 'string' ? this.getFailurePatch(err) : this.getFailurePatch("Failed");
+                                this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
+                            })
                         });
-
-                        // check if all params are there
-                        if ( this.paramSpecs[obj.spec.ref.kind].length != Object.keys(params).length ) {
-                            const patch = this.getFailurePatch("Parameters missing, consult documentation");
-                            this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
-                            return;
-                        }
-
-                        this.handlers[obj.spec.ref.kind](params, this.customObjectsApi).then(() => {
-                            const patch = this.getSuccessPatch();
-                            this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
-                        }).catch(err => {
-                            const patch = typeof err == 'string' ? this.getFailurePatch(err) : this.getFailurePatch("Failed");
-                            this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
-                        })
                     } else {
                         const patch = this.getFailurePatch("Unknown handler specified");
                         this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
                     }
                 }
             }
-        });
-    }
-
-    patchCustomTaskResource(ns, name, patch) {
-        const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH}};
-        
-        this.customObjectsApi.patchNamespacedCustomObjectStatus('tekton.dev', 'v1alpha1', ns, 'runs', name, patch, undefined, undefined, undefined, options).catch(err => {
-            console.log("error!")
-            console.log(err);
         });
     }
 }

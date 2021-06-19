@@ -10,27 +10,48 @@ const PipelineRunHandler = require('../lib/pipelineRunHandler')
  */
 module.exports = (handlers, runHandlers) => {
 
-    const sendToSlack = (channel, message) => {
-        if ( process.env.SLACK_WEBHOOK_URL == undefined ) {
-            return Promise.reject("No slack webhook configured");
-        }
-    
-        const webhook = new IncomingWebhook(process.env.SLACK_WEBHOOK_URL);
+    const send = (params, message) => {
+        const webhook = new IncomingWebhook(params.webhookUrl);
         return webhook.send({
-            text:message,
-            username: 'TektonSlackBot',
-            icon_emoji: ':tekton:',
-            channel: channel
+            text: message,
+            username: params.username,
+            icon_emoji: params.icon,
+            channel: params.channel
         });
     };
 
-    runHandlers.addCancelled('slack', () => sendToSlack("#tekton-dev", ":x: Pipeline Run Cancelled"));
-    runHandlers.addStarted('slack', () => sendToSlack("#tekton-dev", ":crossed_fingers: Pipeline Run Started"));
-    runHandlers.addSucceeded('slack', () => sendToSlack("#tekton-dev", ":partying_face: Pipeline Run Succeeded"));
-    runHandlers.addFailed('slack', () => sendToSlack("#tekton-dev", ":x: Pipeline Run Failed"));
+    const defaultParams = [
+        { name: 'username', default: 'Serval Bot' },
+        { name: 'icon', default: ':tiger:' },
+        { name: 'webhookUrl', sources: ['env', 'namespace-secret'] },
+        { name: 'channel', sources: ['env', 'namespace-secret', 'pipelinerun', 'taskparam'] }
+    ];
 
-    handlers.addHandler('SlackNotification', params => sendToSlack(params.channel, params.message), [
-        { name: 'channel' },
-        { name: 'message' },
-    ], 'slack');
+    const prefix = 'slack';
+
+    runHandlers.addStarted(prefix,
+        params => send(params, params.runStarted),
+        [ ...defaultParams, { name: 'runStarted', default: ':alarm_clock: Pipeline `$name` Started', replace: true }]
+    );
+
+    runHandlers.addCancelled(prefix,
+        params => send(params, params.runCancelled),
+        [ ...defaultParams, { name: 'runCancelled', default: ':boom: Pipeline `$name` Cancelled', replace: true }]
+    );
+
+    runHandlers.addSucceeded(prefix,
+        params => send(params, params.runSucceeded),
+        [ ...defaultParams, { name: 'runSucceeded', default: ':partying_face: Pipeline `$name` Succeeded', replace: true }]
+    );
+    
+    runHandlers.addFailed(prefix,
+        params => send(params, params.runFailed),
+        [ ...defaultParams, { name: 'runFailed', default: ':boom: Pipeline `$name` Failed', replace: true }]
+    );
+
+    handlers.addHandler('SlackNotification', 
+        params => send(params, params.message),
+        [ ...defaultParams, { name: 'message' }],
+        prefix
+    );
 };

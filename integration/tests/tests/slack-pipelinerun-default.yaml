@@ -3,7 +3,12 @@ kind: PipelineRun
 metadata:
   generateName: serval-run-
   namespace: pipelines
+  annotations:
+    serval.dev/slack-channel: "#tekton-dev"
+    # no annotations = default message!
+    serval.dev/monitor-run: 'slack'
 spec:
+  timeout: "0h0m10s"
   pipelineSpec:
     tasks:
     - name: wait
@@ -12,4 +17,4 @@ spec:
         kind: Wait
       params:
       - name: waitFor
-        value: "5"
+        value: "1"

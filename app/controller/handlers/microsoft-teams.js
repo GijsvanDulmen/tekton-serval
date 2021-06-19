@@ -9,19 +9,41 @@ const PipelineRunHandler = require('../lib/pipelineRunHandler')
  * @param {PipelineRunHandler} runHandlers 
  */
 module.exports = (handlers, runHandlers) => {
-    handlers.addHandler('TeamsNotification', params => {
-        if ( process.env.TEAMS_WEBHOOK_URL == undefined ) {
-            return Promise.reject("No teams webhook configured");
-        }
     
-        return fetch(process.env.TEAMS_WEBHOOK_URL, {
+    const send = (params, message) => {
+        return fetch(params.webhookUrl, {
             method: 'post',
-            body:    JSON.stringify({
-                text: params.message
-            }),
+            body:    JSON.stringify({ text: message }),
             headers: { 'Content-Type': 'application/json' },
         });
-    }, [
-        { name: 'message' },
-    ], 'microsoft-teams');
+    };
+
+    const webHookUrlParam = { name: 'webhookUrl', sources: ['env', 'namespace-secret'] };
+    const prefix = 'microsoft-teams';
+    
+    runHandlers.addStarted(prefix,
+        params => send(params, params.runStarted),
+        [ webHookUrlParam, { name: 'runStarted', default: 'Pipeline $name Started', replace: true }]
+    );
+
+    runHandlers.addCancelled(prefix,
+        params => send(params, params.runCancelled),
+        [ webHookUrlParam, { name: 'runCancelled', default: 'Pipeline $name Cancelled', replace: true }]
+    );
+
+    runHandlers.addSucceeded(prefix,
+        params => send(params, params.runSucceeded),
+        [ webHookUrlParam, { name: 'runSucceeded', default: 'Pipeline $name Succeeded', replace: true }]
+    );
+    
+    runHandlers.addFailed(prefix,
+        params => send(params, params.runFailed),
+        [ webHookUrlParam, { name: 'runFailed', default: 'Pipeline $name Failed', replace: true }]
+    );
+
+    handlers.addHandler('TeamsNotification',
+        params => send(params, params.message),
+        [ webHookUrlParam, { name: 'message' }],
+        prefix
+    );
 };

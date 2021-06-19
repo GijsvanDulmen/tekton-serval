@@ -6,6 +6,7 @@ metadata:
   annotations:
     serval.dev/slack-channel: "#tekton-dev"
 spec:
+  timeout: "0h0m10s"
   pipelineSpec:
     tasks:
     - name: slack-notification
@@ -14,4 +15,4 @@ spec:
         kind: SlackNotification
       params:
       - name: message
-        value: ":ok_hand: Send from Serval from run $(context.pipelineRun.name)!"
+        value: ":ok_hand: Serval - Annotations"

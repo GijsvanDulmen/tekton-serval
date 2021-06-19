@@ -9,7 +9,8 @@ const PipelineRunHandler = require('../lib/pipelineRunHandler')
  * @param {PipelineRunHandler} runHandlers 
  */
 module.exports = (handlers, runHandlers) => {
-    handlers.addHandler('GithubStatus', params => {
+
+    const updateStatus = (params, state) => {
         if ( process.env.GITHUB_APP_KEY == undefined ) {
             return Promise.reject("No github app key configured");
         }
@@ -22,9 +23,9 @@ module.exports = (handlers, runHandlers) => {
         });
 
         const json = {
-            state: params.status,
+            state: state,
             target_url: params.url,
-            description: "Description",
+            description: params.description,
             context: params.context
         };
 
@@ -46,13 +47,43 @@ module.exports = (handlers, runHandlers) => {
         }).catch(err => {
             console.log(err)
         });
-    }, [
+    }
+
+    const defaultParams = [
         { name: 'commit' },
-        { name: 'repository' },
-        { name: 'owner' },
-        { name: 'status' },
-        { name: 'installation-id' },
-        { name: 'url' },
-        { name: 'context', default: 'cicd/tekton' },
-    ], 'github-status');
+        { name: 'repository', sources: ['namespace-secret', 'pipelinerun', 'taskparam'] },
+        { name: 'owner', sources: ['namespace-secret', 'pipelinerun', 'taskparam'] },
+        { name: 'installation-id', sources: ['namespace-secret', 'pipelinerun', 'taskparam'] },
+        { name: 'url', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], replace: true },
+        { name: 'description', replace: true, default: "Run $name" },
+        { name: 'context', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], default: 'cicd/serval' },
+    ];
+
+    const prefix = 'github-status';
+
+    runHandlers.addStarted(prefix,
+        params => updateStatus(params, 'pending'),
+        defaultParams
+    );
+
+    runHandlers.addCancelled(prefix,
+        params => updateStatus(params, 'failure'),
+        defaultParams
+    );
+
+    runHandlers.addSucceeded(prefix,
+        params => updateStatus(params, 'success'),
+        defaultParams
+    );
+    
+    runHandlers.addFailed(prefix,
+        params => updateStatus(params, 'failure'),
+        defaultParams
+    );
+
+    handlers.addHandler('GithubStatus',
+        params => updateStatus(params, params.status),
+        [ ...defaultParams, { name: 'status' }],
+        prefix
+    );
 };
