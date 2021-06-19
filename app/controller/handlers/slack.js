@@ -3,6 +3,8 @@ const { IncomingWebhook } = require('@slack/webhook');
 const CustomTaskHandler = require('../lib/customTaskHandler')
 const PipelineRunHandler = require('../lib/pipelineRunHandler')
 
+const Bottleneck = require("bottleneck");
+
 /**
  * 
  * @param {CustomTaskHandler} handlers 
@@ -10,14 +12,22 @@ const PipelineRunHandler = require('../lib/pipelineRunHandler')
  */
 module.exports = (handlers, runHandlers) => {
 
+    // https://api.slack.com/docs/rate-limits#rate-limits__limits-when-posting-messages
+    // set the min time this way to allow for reduced stress on Slack
+    const limiter = new Bottleneck({
+        minTime: 1000
+    });
+
     const send = (params, message) => {
-        const webhook = new IncomingWebhook(params.webhookUrl);
-        return webhook.send({
-            text: message,
-            username: params.username,
-            icon_emoji: params.icon,
-            channel: params.channel
-        });
+        return limiter.schedule(() => {
+            const webhook = new IncomingWebhook(params.webhookUrl);
+            return webhook.send({
+                text: message,
+                username: params.username,
+                icon_emoji: params.icon,
+                channel: params.channel
+            });
+        });        
     };
 
     const defaultParams = [

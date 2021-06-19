@@ -3,18 +3,29 @@ const fetch = require('node-fetch');
 const CustomTaskHandler = require('../lib/customTaskHandler')
 const PipelineRunHandler = require('../lib/pipelineRunHandler')
 
+const Bottleneck = require("bottleneck");
+
 /**
  * 
  * @param {CustomTaskHandler} handlers 
  * @param {PipelineRunHandler} runHandlers 
  */
 module.exports = (handlers, runHandlers) => {
+
+    // https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/connectors-using#rate-limiting-for-connectors
+    // set the min time this way to allow for reduced stress on the api
+    const limiter = new Bottleneck({
+        minTime: 250
+    });
+
     
     const send = (params, message) => {
-        return fetch(params.webhookUrl, {
-            method: 'post',
-            body:    JSON.stringify({ text: message }),
-            headers: { 'Content-Type': 'application/json' },
+        return limiter.schedule(() => {
+            return fetch(params.webhookUrl, {
+                method: 'post',
+                body:    JSON.stringify({ text: message }),
+                headers: { 'Content-Type': 'application/json' },
+            });
         });
     };
 
