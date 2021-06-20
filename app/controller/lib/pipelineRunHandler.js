@@ -1,8 +1,8 @@
 const CustomObject = require('./customObject');
 
 module.exports = class PipelineRunHandler extends CustomObject {
-    constructor(kc) {
-        super(kc);
+    constructor(kc, logger) {
+        super(kc, logger);
         
         this.events = {
             started: [],
@@ -114,7 +114,7 @@ module.exports = class PipelineRunHandler extends CustomObject {
             if ( handler.params.length == Object.keys(params).length ) {
                 handler.handler(params);
             } else {
-                console.log("params missing for run " + obj.metadata.namespace+"/"+obj.metadata.name + " for " + handler.on)
+                this.logger.error("params missing for run in %s name %s for %s", obj.metadata.namespace, obj.metadata.name, handler.on);
             }
         });
     }

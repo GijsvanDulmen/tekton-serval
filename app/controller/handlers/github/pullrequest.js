@@ -1,5 +1,5 @@
-const CustomTaskHandler = require('../../lib/customTaskHandler')
-const PipelineRunHandler = require('../../lib/pipelineRunHandler')
+const CustomTaskHandler = require('../../lib/customTaskHandler'); // eslint-disable-line no-unused-vars
+const PipelineRunHandler = require('../../lib/pipelineRunHandler'); // eslint-disable-line no-unused-vars
 
 const GithubApp = require('./app');
 
@@ -8,7 +8,7 @@ const GithubApp = require('./app');
  * @param {CustomTaskHandler} handlers 
  * @param {PipelineRunHandler} runHandlers 
  */
-module.exports = (handlers, runHandlers) => {
+module.exports = (handlers, runHandlers, logger) => {
     const app = new GithubApp();
 
     const openPullRequest = (params) => {
@@ -19,6 +19,8 @@ module.exports = (handlers, runHandlers) => {
             body: params.body,
             draft: params.draft == 'true'
         };
+
+        logger.info("open github pr for %s in ns %s", params.runName, params.runNamespace);
 
         return app.postForInstallation(params, "pulls", json, resp => {
             return {
@@ -55,6 +57,8 @@ module.exports = (handlers, runHandlers) => {
             state: params.state,
         };
 
+        logger.info("update github pr %s for %s in ns %s", params.pull_number, params.runName, params.runNamespace);
+
         return app.postForInstallation(params, "pulls/"+params.pull_number, json);
     }
 
@@ -78,6 +82,8 @@ module.exports = (handlers, runHandlers) => {
             body: params.body
         };
 
+        logger.info("add github comment on %s for %s in ns %s", params.pull_number, params.runName, params.runNamespace);
+
         return app.postForInstallation(params, "issues/"+params.pull_number+"/comments", json);
     }
 
@@ -97,6 +103,9 @@ module.exports = (handlers, runHandlers) => {
         const json = {
             reviewers: [params.reviewer]
         };
+
+        logger.info("add github reviewers on %s for %s in ns %s", params.pull_number, params.runName, params.runNamespace);
+
         return app.postForInstallation(params, "pulls/"+params.pull_number+"/requested_reviewers", json);
     }
 

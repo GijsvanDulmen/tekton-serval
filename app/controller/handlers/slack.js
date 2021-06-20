@@ -1,7 +1,7 @@
 const { IncomingWebhook } = require('@slack/webhook');
 
-const CustomTaskHandler = require('../lib/customTaskHandler')
-const PipelineRunHandler = require('../lib/pipelineRunHandler')
+const CustomTaskHandler = require('../lib/customTaskHandler'); // eslint-disable-line no-unused-vars
+const PipelineRunHandler = require('../lib/pipelineRunHandler'); // eslint-disable-line no-unused-vars
 
 const Bottleneck = require("bottleneck");
 
@@ -10,7 +10,7 @@ const Bottleneck = require("bottleneck");
  * @param {CustomTaskHandler} handlers 
  * @param {PipelineRunHandler} runHandlers 
  */
-module.exports = (handlers, runHandlers) => {
+module.exports = (handlers, runHandlers, logger) => {
 
     // https://api.slack.com/docs/rate-limits#rate-limits__limits-when-posting-messages
     // set the min time this way to allow for reduced stress on the api
@@ -20,6 +20,8 @@ module.exports = (handlers, runHandlers) => {
 
     const send = (params, message) => {
         return limiter.schedule(() => {
+            logger.info("sending slack message for %s in ns %s", params.runName, params.runNamespace);
+
             const webhook = new IncomingWebhook(params.webhookUrl);
             return webhook.send({
                 text: message,

@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
-const CustomTaskHandler = require('../lib/customTaskHandler')
-const PipelineRunHandler = require('../lib/pipelineRunHandler')
+const CustomTaskHandler = require('../lib/customTaskHandler'); // eslint-disable-line no-unused-vars
+const PipelineRunHandler = require('../lib/pipelineRunHandler'); // eslint-disable-line no-unused-vars
 
 const Bottleneck = require("bottleneck");
 
@@ -10,7 +10,7 @@ const Bottleneck = require("bottleneck");
  * @param {CustomTaskHandler} handlers 
  * @param {PipelineRunHandler} runHandlers 
  */
-module.exports = (handlers, runHandlers) => {
+module.exports = (handlers, runHandlers, logger) => {
 
     // https://docs.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/connectors-using#rate-limiting-for-connectors
     // set the min time this way to allow for reduced stress on the api
@@ -20,6 +20,8 @@ module.exports = (handlers, runHandlers) => {
 
     const send = (params, message) => {
         return limiter.schedule(() => {
+            logger.info("sending teams message for %s in ns %s", params.runName, params.runNamespace);
+
             return fetch(params.webhookUrl, {
                 method: 'post',
                 body:    JSON.stringify({ text: message }),

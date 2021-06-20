@@ -39,8 +39,6 @@ module.exports = class GithubApp {
 
         const completeUrl = "https://api.github.com/repos/"+owner+"/"+repository+"/"+url;
 
-        // console.log("posting to " + completeUrl);
-
         return fetch(completeUrl, {
             method: 'post',
             body:    JSON.stringify(json),

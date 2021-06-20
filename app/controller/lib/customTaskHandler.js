@@ -3,8 +3,8 @@ const CustomObject = require('./customObject');
 const APIVERSION = "serval.dev/v1";
 
 module.exports = class CustomHandler extends CustomObject {
-    constructor(kc) {
-        super(kc);
+    constructor(kc, logger) {
+        super(kc, logger);
         
         this.handlers = {};
         this.paramSpecs = {};
@@ -108,6 +108,10 @@ module.exports = class CustomHandler extends CustomObject {
                                 return;
                             }
 
+                            // add some default params
+                            params.runNamespace = obj.metadata.namespace;
+                            params.runName = obj.metadata.name;
+
                             this.handlers[obj.spec.ref.kind](params, this.customObjectsApi).then(results => {
                                 let taskResults = [];
                                 if ( results != undefined ) {
@@ -122,7 +126,8 @@ module.exports = class CustomHandler extends CustomObject {
                                 const patch = this.getSuccessPatch(taskResults);
                                 this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
                             }).catch(err => {
-                                console.log(err);
+                                this.logger.error("error executing %s in %s for %s", obj.spec.ref.kind, obj.metadata.namespace, obj.metadata.name);
+                                this.logger.error(err);
                                 const patch = typeof err == 'string' ? this.getFailurePatch(err) : this.getFailurePatch("Failed");
                                 this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
                             })

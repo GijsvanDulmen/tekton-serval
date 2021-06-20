@@ -1,15 +1,17 @@
 const k8s = require('@kubernetes/client-node');
 
 module.exports = class CustomObject {
-    constructor(kc) {
+    constructor(kc, logger) {
         this.watcher = new k8s.Watch(kc);
         this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
         this.coreApi = kc.makeApiClient(k8s.CoreV1Api);
+        this.logger = logger;
     }
 
     watch(resource, handler) {
         this.watcher.watch(resource, {}, (phase, obj) => handler(phase, obj)).catch(err => {
-            console.log(err);
+            this.logger.error("error watching for %s", resource);
+            this.logger.error(err);
         });
     }
 
@@ -17,8 +19,8 @@ module.exports = class CustomObject {
         const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH}};
         
         this.customObjectsApi.patchNamespacedCustomObjectStatus('tekton.dev', 'v1alpha1', ns, 'runs', name, patch, undefined, undefined, undefined, options).catch(err => {
-            console.log("error!")
-            console.log(err);
+            this.logger.error("error patching run in %s on %s", ns, name);
+            this.logger.error(err);
         });
     }
 
@@ -64,7 +66,7 @@ module.exports = class CustomObject {
     }
 
     fetchSecretIfNeeded(paramSpecs, namespace) {
-        return new Promise((res, rej) => { 
+        return new Promise(res => { 
             let needSecretCheck = false;
             paramSpecs.forEach(paramSpec => {
                 if ( paramSpec.sources && paramSpec.sources.indexOf('namespace-secret') ) {
@@ -82,9 +84,9 @@ module.exports = class CustomObject {
                     }
                     res(results);
                 }).catch(err => {
-                    console.log(err);
-                    // nothing available
-                    res({});
+                    this.logger.error("error reading serval secret in %s", namespace);
+                    this.logger.error(err);
+                    res({}); // nothing available
                 })
             } else {
                 res({}); // no secret available

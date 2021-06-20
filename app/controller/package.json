@@ -15,6 +15,10 @@
     "@slack/web-api": "^5.13.0",
     "@slack/webhook": "^6.0.0",
     "bottleneck": "^2.19.5",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "eslint": "^7.29.0"
   }
 }

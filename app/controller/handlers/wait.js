@@ -1,15 +1,18 @@
-const CustomTaskHandler = require('../lib/customTaskHandler')
-const PipelineRunHandler = require('../lib/pipelineRunHandler')
+const CustomTaskHandler = require('../lib/customTaskHandler'); // eslint-disable-line no-unused-vars
+const PipelineRunHandler = require('../lib/pipelineRunHandler'); // eslint-disable-line no-unused-vars
 
 /**
  * 
  * @param {CustomTaskHandler} handlers 
  * @param {PipelineRunHandler} runHandlers 
  */
-module.exports = (handlers, runHandlers) => {
+module.exports = (handlers, runHandlers, logger) => {
     handlers.addHandler('Wait', params => {
-        return new Promise((res, rej) => {
-            setTimeout(() => res({}), parseFloat(params.waitFor)*1000);
+        const waitFor = parseFloat(params.waitFor)*1000;
+        logger.info("waiting %s seconds for %s in ns %s", waitFor, params.runName, params.runNamespace);
+
+        return new Promise(res => {
+            setTimeout(() => res({}), waitFor);
         });
     }, [
         { name: 'waitFor' }

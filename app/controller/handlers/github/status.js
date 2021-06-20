@@ -1,5 +1,5 @@
-const CustomTaskHandler = require('../../lib/customTaskHandler')
-const PipelineRunHandler = require('../../lib/pipelineRunHandler')
+const CustomTaskHandler = require('../../lib/customTaskHandler'); // eslint-disable-line no-unused-vars
+const PipelineRunHandler = require('../../lib/pipelineRunHandler'); // eslint-disable-line no-unused-vars
 
 const GithubApp = require('./app');
 
@@ -8,7 +8,7 @@ const GithubApp = require('./app');
  * @param {CustomTaskHandler} handlers 
  * @param {PipelineRunHandler} runHandlers 
  */
-module.exports = (handlers, runHandlers) => {
+module.exports = (handlers, runHandlers, logger) => {
 
     const app = new GithubApp();
 
@@ -19,6 +19,8 @@ module.exports = (handlers, runHandlers) => {
             description: params.description,
             context: params.context
         };
+
+        logger.info("setting github status on %s for %s in ns %s", params.commit, params.runName, params.runNamespace);
 
         return app.postForInstallation(params, "statuses/"+params.commit, json);
     }
