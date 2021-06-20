@@ -92,7 +92,7 @@ module.exports = class PipelineRunHandler extends CustomObject {
                     paramSpec.sources = ['pipelinerun'];
                 }
 
-                params = this.getParamFetcher().getParam(paramSpec, params, secret, obj.metadata);
+                params = this.getParamFetcher().getParam(handler.on, paramSpec, params, secret, obj.metadata);
 
                 if ( params[paramSpec.name] != undefined && paramSpec.replace ) {
                     params[paramSpec.name] = params[paramSpec.name].replace("$name", obj.metadata.name);
