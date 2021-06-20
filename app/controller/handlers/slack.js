@@ -1,4 +1,5 @@
 const { IncomingWebhook } = require('@slack/webhook');
+const { WebClient } = require('@slack/web-api');
 
 const CustomTaskHandler = require('../lib/customTaskHandler'); // eslint-disable-line no-unused-vars
 const PipelineRunHandler = require('../lib/pipelineRunHandler'); // eslint-disable-line no-unused-vars
@@ -24,10 +25,50 @@ module.exports = (handlers, runHandlers, logger) => {
 
             const webhook = new IncomingWebhook(params.webhookUrl);
             return webhook.send({
-                text: message,
+                attachments: [
+                    {
+                        color: "#EDC707",
+                        blocks: [
+                            {
+                                type: "section",
+                                text: {
+                                    type: "mrkdwn",
+                                    text: message
+                                }
+                            }
+                        ]
+                    }
+                ],
+                channel: params.channel,
                 username: params.username,
-                icon_emoji: params.icon,
-                channel: params.channel
+                icon_emoji: params.icon
+            }).then(() => {}); // no results
+        });        
+    };
+
+    const sendByApi = (params, message) => {
+        return limiter.schedule(() => {
+            logger.info("sending slack api message for %s in ns %s", params.runName, params.runNamespace);
+
+            const web = new WebClient(params.token);
+            return web.chat.postMessage({
+                attachments: [
+                    {
+                        color: "#EDC707",
+                        blocks: [
+                            {
+                                type: "section",
+                                text: {
+                                    type: "mrkdwn",
+                                    text: message
+                                }
+                            }
+                        ]
+                    }
+                ],
+                channel: params.channel,
+                username: params.username,
+                icon_emoji: params.icon
             }).then(() => {}); // no results
         });        
     };
@@ -36,6 +77,13 @@ module.exports = (handlers, runHandlers, logger) => {
         { name: 'username', default: 'Serval Bot' },
         { name: 'icon', default: ':tiger:' },
         { name: 'webhookUrl', sources: ['env', 'namespace-secret'] },
+        { name: 'channel', sources: ['env', 'namespace-secret', 'pipelinerun', 'taskparam'] }
+    ];
+
+    const defaultParamsToken = [
+        { name: 'username', default: 'Serval Bot' },
+        { name: 'icon', default: ':tiger:' },
+        { name: 'token', sources: ['env', 'namespace-secret'] },
         { name: 'channel', sources: ['env', 'namespace-secret', 'pipelinerun', 'taskparam'] }
     ];
 
@@ -66,4 +114,12 @@ module.exports = (handlers, runHandlers, logger) => {
         [ ...defaultParams, { name: 'message' }],
         prefix
     );
+
+    handlers.addHandler('SlackWrite', 
+        params => sendByApi(params, params.message),
+        [ ...defaultParamsToken, { name: 'message' }],
+        prefix
+    );
+
+
 };
