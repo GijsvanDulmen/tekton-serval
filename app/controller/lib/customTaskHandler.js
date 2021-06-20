@@ -80,22 +80,11 @@ module.exports = class CustomHandler extends CustomObject {
                         // check if there are secrets needed
                         this.fetchSecretIfNeeded(this.paramSpecs[obj.spec.ref.kind], obj.metadata.namespace).then(secret => {
                             this.paramSpecs[obj.spec.ref.kind].forEach(paramSpec => {
-                                if ( paramSpec.default != undefined ) {
-                                    params[paramSpec.name] = paramSpec.default;
-                                }
-
                                 if ( paramSpec.sources == undefined ) {
                                     paramSpec.sources = ['pipelinerun', 'taskparam'];
                                 }
-
-                                // get from environment
-                                params = this.getFromEnvironment(prefix, paramSpec, params);
-
-                                // get from environment
-                                params = this.getFromSecret(prefix, paramSpec, params, secret);
-                                
-                                // check if there is an annotation
-                                params = this.getFromAnnotations(prefix, paramSpec, params, obj.metadata);
+                            
+                                params = this.getParamFetcher().getParam(paramSpec, params, secret, obj.metadata);
                                 
                                 // explicit annotation
                                 params = this.getFromTaskSpec(paramSpec, params, obj.spec);

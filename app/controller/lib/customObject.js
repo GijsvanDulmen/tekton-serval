@@ -1,4 +1,5 @@
 const k8s = require('@kubernetes/client-node');
+const ParamFetcher = require('./paramFetcher');
 
 module.exports = class CustomObject {
     constructor(kc, logger) {
@@ -6,6 +7,7 @@ module.exports = class CustomObject {
         this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
         this.coreApi = kc.makeApiClient(k8s.CoreV1Api);
         this.logger = logger;
+        this.paramFetcher = new ParamFetcher();
     }
 
     watch(resource, handler) {
@@ -15,6 +17,13 @@ module.exports = class CustomObject {
         });
     }
 
+    /**
+     * @returns ParamFetcher
+     */
+    getParamFetcher() {
+        return this.paramFetcher;
+    }
+
     patchCustomTaskResource(ns, name, patch) {
         const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH}};
         
@@ -22,47 +31,6 @@ module.exports = class CustomObject {
             this.logger.error("error patching run in %s on %s", ns, name);
             this.logger.error(err);
         });
-    }
-
-    /**
-     * 
-     * @param {string} name 
-     * @param {object} paramSpec 
-     * @param {object} params 
-     * @returns {object}
-     */
-     getFromEnvironment(name, paramSpec, params) {
-        if ( paramSpec.sources.indexOf('env') != -1 ) {
-            const envName = name.toUpperCase()+"_"+paramSpec.name.toUpperCase();
-            if ( process.env[envName] != undefined ) {
-                params[paramSpec.name] = process.env[envName];
-            }
-        }
-        return params;
-    }
-
-    getFromAnnotations(prefix, paramSpec, params, metadata) {
-        if ( paramSpec.sources.indexOf('pipelinerun') != -1 ) {
-            if ( metadata.annotations ) {
-                Object.keys(metadata.annotations).forEach(key => {
-                    if ( key == 'serval.dev/'+prefix+"-"+paramSpec.name ) {
-                        params[paramSpec.name] = metadata.annotations[key];
-                    }
-                });
-            }
-        }
-        return params;
-    }
-
-    getFromSecret(prefix, paramSpec, params, secret) {
-        if ( paramSpec.sources.indexOf('namespace-secret') != -1 ) {
-            Object.keys(secret).forEach(key => {
-                if ( key == prefix+"-"+paramSpec.name ) {
-                    params[paramSpec.name] = secret[key];
-                }
-            });
-        }
-        return params;
     }
 
     fetchSecretIfNeeded(paramSpecs, namespace) {

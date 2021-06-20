@@ -88,22 +88,11 @@ module.exports = class PipelineRunHandler extends CustomObject {
         // check if there are secrets needed
         this.fetchSecretIfNeeded(handler.params, obj.metadata.namespace).then(secret => {
             handler.params.forEach(paramSpec => {
-                if ( paramSpec.default != undefined ) {
-                    params[paramSpec.name] = paramSpec.default;
-                }
-
                 if ( paramSpec.sources == undefined ) {
                     paramSpec.sources = ['pipelinerun'];
                 }
 
-                // get from environment
-                params = this.getFromEnvironment(handler.on, paramSpec, params);
-
-                // get from environment
-                params = this.getFromSecret(handler.on, paramSpec, params, secret);
-                
-                // check if there is an annotation
-                params = this.getFromAnnotations(handler.on, paramSpec, params, obj.metadata);
+                params = this.getParamFetcher().getParam(paramSpec, params, secret, obj.metadata);
 
                 if ( params[paramSpec.name] != undefined && paramSpec.replace ) {
                     params[paramSpec.name] = params[paramSpec.name].replace("$name", obj.metadata.name);
