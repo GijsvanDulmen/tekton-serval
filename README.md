@@ -1,8 +1,10 @@
-# Serval - Faster  tasks
+# Serval - Doing small things a bit faster
 
-If Tekton Tasks are too much overhead on your cluster and you want faster tasks handling for API calls like Slack, Microsoft Teams and Github Status.
-It uses the Tekton Custom Tasks functionality for speeding up common tasks in pipelines. It supports the following tasks, sometimes this includes
-namespace based authorization for multi tenant setups.
+So your normal Tekton tasks are doing OK and are long running. But certain tasks are just too much overhead for spinning up an entire container.
+Probably they finish within a second or so because they are only calling a single API. This is where Serval comes in and for those types of tasks
+it makes it a lot faster. It uses the Custom Tasks functionality of Tekton and is purely meant for those single-shot short-running tasks.
+
+It supports the following tasks, sometimes this includes namespace based authorization for multi tenant setups.
 
 ## Slack
 - Message through Webhook URL
