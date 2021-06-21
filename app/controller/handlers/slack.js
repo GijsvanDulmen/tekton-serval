@@ -6,6 +6,7 @@ const PipelineRunHandler = require('../lib/pipelineRunHandler'); // eslint-disab
 
 const Bottleneck = require("bottleneck");
 const AuthorizationWatcher = require('../lib/authorizationWatcher');
+const SlackSocket = require('../lib/slackSocket');
 
 /**
  * 
@@ -13,8 +14,9 @@ const AuthorizationWatcher = require('../lib/authorizationWatcher');
  * @param {PipelineRunHandler} runHandlers 
  * @param {*} logger
  * @param {AuthorizationWatcher} authWatcher
+ * @param {SlackSocket} slackSocket
  */
-module.exports = (handlers, runHandlers, logger, authWatcher) => {
+module.exports = (handlers, runHandlers, logger, authWatcher, slackSocket) => {
 
     // https://api.slack.com/docs/rate-limits#rate-limits__limits-when-posting-messages
     // set the min time this way to allow for reduced stress on the api
@@ -28,37 +30,6 @@ module.exports = (handlers, runHandlers, logger, authWatcher) => {
 
             const webhook = new IncomingWebhook(params.webhookUrl);
             return webhook.send({
-                attachments: [
-                    {
-                        color: "#EDC707",
-                        blocks: [
-                            {
-                                type: "section",
-                                text: {
-                                    type: "mrkdwn",
-                                    text: message
-                                }
-                            }
-                        ]
-                    }
-                ],
-                channel: params.channel,
-                username: params.username,
-                icon_emoji: params.icon
-            }).then(() => {}); // no results
-        });        
-    };
-
-    const sendByApi = (params, message) => {
-        if ( !authWatcher.hasSlackChannelAuthorization(params.runNamespace, params.channel) ) {
-            return Promise.reject("no authorization for this namespace and channel combination");
-        }
-
-        return limiter.schedule(() => {
-            logger.info("sending slack api message for %s in ns %s", params.runName, params.runNamespace);
-
-            const web = new WebClient(params.token);
-            return web.chat.postMessage({
                 attachments: [
                     {
                         color: "#EDC707",
@@ -122,11 +93,145 @@ module.exports = (handlers, runHandlers, logger, authWatcher) => {
         prefix
     );
 
+    const sendByApi = (params, message) => {
+        if ( !authWatcher.hasSlackChannelAuthorization(params.runNamespace, params.channel) ) {
+            return Promise.reject("no authorization for this namespace and channel combination");
+        }
+
+        return limiter.schedule(() => {
+            logger.info("sending slack api message for %s in ns %s", params.runName, params.runNamespace);
+
+            const web = new WebClient(params.token);
+            return web.chat.postMessage({
+                attachments: [
+                    {
+                        color: "#EDC707",
+                        blocks: [
+                            {
+                                type: "section",
+                                text: {
+                                    type: "mrkdwn",
+                                    text: message
+                                }
+                            }
+                        ]
+                    }
+                ],
+                channel: params.channel,
+                username: params.username,
+                icon_emoji: params.icon
+            }).then(() => {}); // no results
+        });        
+    };
+
     handlers.addHandler('SlackWrite', 
         params => sendByApi(params, params.message),
         [ ...defaultParamsToken, { name: 'message' }],
         prefix
     );
 
+    const approveByApi = (params, message) => {
+        if ( !authWatcher.hasSlackChannelAuthorization(params.runNamespace, params.channel) ) {
+            return Promise.reject("no authorization for this namespace and channel combination");
+        }
 
+        const web = new WebClient(params.token);
+
+        return new Promise((res, rej) => {
+            limiter.schedule(() => {
+                logger.info("sending slack api message for %s in ns %s", params.runName, params.runNamespace);
+
+                const id = params.runNamespace+"-"+params.runName;
+
+                web.chat.postMessage({
+                    attachments: [
+                        {
+                            color: "#EDC707",
+                            blocks: [
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": message
+                                    }
+                                },
+                                {
+                                    "type": "actions",
+                                    "block_id": id,
+                                    "elements": [
+                                        {
+                                            "type": "button",
+                                            "action_id": "approve_request:no",
+                                            "style": "danger",
+                                            "value": "rejected",
+                                            "text": {
+                                                "type": "plain_text",
+                                                "text": ":no_entry: Reject",
+                                                "emoji": true
+                                            }
+                                        },
+                                        {
+                                            "type": "button",
+                                            "style": "primary",
+                                            "value": "approved",
+                                            "action_id": "approve_request:yes",
+                                            "text": {
+                                                "type": "plain_text",
+                                                "text": ":white_check_mark: Approve",
+                                                "emoji": true
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    channel: params.channel,
+                    username: params.username,
+                    icon_emoji: params.icon
+                }).catch(err => {
+                    rej(err);
+                }).then(resp => {
+                    slackSocket.addCallback(id, result => {
+                        let completedMessage;
+                        if ( result.result == 'timeout' ) {
+                            completedMessage = ':alarm_clock: timeout for: ' + message;
+                        } else {
+                            completedMessage = result.result + " by `"+result.by+"` for: " + message;
+                        }
+
+                        web.chat.update({
+                            ts: result.ts,
+                            channel: result.channel,
+                            attachments: [
+                                {
+                                    color: "#EDC707",
+                                    blocks: [
+                                        {
+                                            "type": "section",
+                                            "text": {
+                                                "type": "mrkdwn",
+                                                "text": completedMessage
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        });
+
+                        res({ result: result.result });
+                    }, 1000*parseInt(params.timeout), {
+                        channel: resp.channel,
+                        ts: resp.ts
+                    })
+                });
+            });     
+        });
+    };
+
+    handlers.addHandler('SlackApprove', 
+        params => approveByApi(params, params.message),
+        [ ...defaultParamsToken, { name: 'message' }, { name: 'timeout' }],
+        prefix
+    );
 };

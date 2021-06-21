@@ -1,0 +1,66 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+spec:
+  timeout: "0h0m10s"
+  pipelineSpec:
+    tasks:
+    - name: slack-approval
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackApprove
+      params:
+      - name: channel
+        value: "#serval"
+      - name: message
+        value: ":question: Approve?"
+      # in seconds
+      - name: timeout
+        value: "5"
+    - name: slack-timeout
+      runAfter:
+      - slack-approval
+      when:
+      - input: "$(tasks.slack-approval.results.result)"
+        operator: in
+        values: ["timeout"]
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackWrite
+      params:
+      - name: channel
+        value: "#serval"
+      - name: message
+        value: ":ok_hand: Timeout!"
+    - name: slack-approved
+      runAfter:
+      - slack-approval
+      when:
+      - input: "$(tasks.slack-approval.results.result)"
+        operator: in
+        values: ["approved"]
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackWrite
+      params:
+      - name: channel
+        value: "#serval"
+      - name: message
+        value: ":ok_hand: Approved!"
+    - name: slack-rejected
+      runAfter:
+      - slack-approval
+      when:
+      - input: "$(tasks.slack-approval.results.result)"
+        operator: in
+        values: ["rejected"]
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackWrite
+      params:
+      - name: channel
+        value: "#serval"
+      - name: message
+        value: ":ok_hand: Rejected!"

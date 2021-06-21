@@ -34,8 +34,12 @@ const runHandlers = new PipelineRunHandler(kc, logger);
 const authWatcher = new AuthorizationWatcher(kc, logger);
 
 require('./handlers/microsoft-teams')(handlers, runHandlers, logger);
-require('./handlers/slack')(handlers, runHandlers, logger, authWatcher);
 require('./handlers/wait')(handlers, runHandlers, logger);
+
+// slack
+const SlackSocket = require('./lib/slackSocket');
+const slackSocket = new SlackSocket(logger);
+require('./handlers/slack')(handlers, runHandlers, logger, authWatcher, slackSocket);
 
 // github
 const GithubApp = require('./handlers/github/app');
@@ -44,6 +48,8 @@ require('./handlers/github/status')(handlers, runHandlers, logger, app);
 require('./handlers/github/deployment')(handlers, runHandlers, logger, app);
 require('./handlers/github/pullrequest')(handlers, runHandlers, logger, app);
 
+// start all
 authWatcher.start();
 handlers.start();
 runHandlers.start();
+slackSocket.start();
