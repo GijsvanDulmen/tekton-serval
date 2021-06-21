@@ -4,7 +4,8 @@
   "description": "Serval Tekton Custom Task Controller",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "lint": "node ./node_modules/eslint/bin/eslint.js ."
   },
   "author": "Gijs van Dulmen",
   "license": "Mozilla Public License 2.0",
