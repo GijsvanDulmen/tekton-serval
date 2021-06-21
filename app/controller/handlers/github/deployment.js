@@ -1,16 +1,12 @@
 const CustomTaskHandler = require('../../lib/customTaskHandler'); // eslint-disable-line no-unused-vars
 const PipelineRunHandler = require('../../lib/pipelineRunHandler'); // eslint-disable-line no-unused-vars
 
-const GithubApp = require('./app');
-
 /**
  * 
  * @param {CustomTaskHandler} handlers 
  * @param {PipelineRunHandler} runHandlers 
  */
-module.exports = (handlers, runHandlers, logger) => {
-    const app = new GithubApp();
-
+module.exports = (handlers, runHandlers, logger, app) => {
     const createDeployment = (params) => {
         const json = {
             ref: params.ref,

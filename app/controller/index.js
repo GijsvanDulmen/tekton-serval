@@ -1,6 +1,7 @@
 const k8s = require('@kubernetes/client-node');
 const CustomTaskHandler = require('./lib/customTaskHandler');
 const PipelineRunHandler = require('./lib/pipelineRunHandler');
+const AuthorizationWatcher = require('./lib/authorizationWatcher');
 
 const kc = new k8s.KubeConfig();
 
@@ -30,13 +31,19 @@ logger.add(new transports.Console({ format: format.json() }));
 
 const handlers = new CustomTaskHandler(kc, logger);
 const runHandlers = new PipelineRunHandler(kc, logger);
+const authWatcher = new AuthorizationWatcher(kc, logger);
 
 require('./handlers/microsoft-teams')(handlers, runHandlers, logger);
-require('./handlers/slack')(handlers, runHandlers, logger);
+require('./handlers/slack')(handlers, runHandlers, logger, authWatcher);
 require('./handlers/wait')(handlers, runHandlers, logger);
-require('./handlers/github/status')(handlers, runHandlers, logger);
-require('./handlers/github/deployment')(handlers, runHandlers, logger);
-require('./handlers/github/pullrequest')(handlers, runHandlers, logger);
 
+// github
+const GithubApp = require('./handlers/github/app');
+const app = new GithubApp(authWatcher);
+require('./handlers/github/status')(handlers, runHandlers, logger, app);
+require('./handlers/github/deployment')(handlers, runHandlers, logger, app);
+require('./handlers/github/pullrequest')(handlers, runHandlers, logger, app);
+
+authWatcher.start();
 handlers.start();
 runHandlers.start();

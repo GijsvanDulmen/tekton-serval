@@ -101,6 +101,10 @@ module.exports = class PipelineRunHandler extends CustomObject {
 
             // check if all params are there
             if ( handler.params.length == Object.keys(params).length ) {
+                // add some default params
+                params.runNamespace = obj.metadata.namespace;
+                params.runName = obj.metadata.name;
+
                 handler.handler(params);
             } else {
                 this.logger.error("params missing for run in %s name %s for %s", obj.metadata.namespace, obj.metadata.name, handler.on);

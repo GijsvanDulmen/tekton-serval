@@ -5,13 +5,16 @@ const CustomTaskHandler = require('../lib/customTaskHandler'); // eslint-disable
 const PipelineRunHandler = require('../lib/pipelineRunHandler'); // eslint-disable-line no-unused-vars
 
 const Bottleneck = require("bottleneck");
+const AuthorizationWatcher = require('../lib/authorizationWatcher');
 
 /**
  * 
  * @param {CustomTaskHandler} handlers 
  * @param {PipelineRunHandler} runHandlers 
+ * @param {*} logger
+ * @param {AuthorizationWatcher} authWatcher
  */
-module.exports = (handlers, runHandlers, logger) => {
+module.exports = (handlers, runHandlers, logger, authWatcher) => {
 
     // https://api.slack.com/docs/rate-limits#rate-limits__limits-when-posting-messages
     // set the min time this way to allow for reduced stress on the api
@@ -47,6 +50,10 @@ module.exports = (handlers, runHandlers, logger) => {
     };
 
     const sendByApi = (params, message) => {
+        if ( !authWatcher.hasSlackChannelAuthorization(params.runNamespace, params.channel) ) {
+            return Promise.reject("no authorization for this namespace and channel combination");
+        }
+
         return limiter.schedule(() => {
             logger.info("sending slack api message for %s in ns %s", params.runName, params.runNamespace);
 
