@@ -9,7 +9,7 @@ metadata:
     serval.dev/github-status-installation-id: "17456888"
     serval.dev/github-status-context: "cicd/serval"
 spec:
-  timeout: "0h0m10s"
+  timeout: "0h0m20s"
   pipelineSpec:
     tasks:
     - name: github-status
