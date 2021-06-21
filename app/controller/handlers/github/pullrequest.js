@@ -46,7 +46,6 @@ module.exports = (handlers, runHandlers, logger, app) => {
         prefix
     );
 
-
     const updatePullRequest = (params) => {
         let json = {
             state: params.state,
