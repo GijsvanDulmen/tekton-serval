@@ -8,17 +8,19 @@ const PipelineRunHandler = require('../../lib/pipelineRunHandler'); // eslint-di
  */
 module.exports = (handlers, runHandlers, logger, app) => {
     const openPullRequest = (params) => {
-        const json = {
-            title: params.title,
+        let json = {
             head: params.head,
             base: params.base,
-            body: params.body,
+            title: params.title,
             draft: params.draft == 'true'
         };
 
+        if ( params.body != '' ) { json.body = params.body; }
+        
         logger.info("open github pr for %s in ns %s", params.runName, params.runNamespace);
 
         return app.postForInstallation(params, "pulls", json, resp => {
+            console.log(resp);
             return {
                 id: new String(resp.id),
                 number: new String(resp.number)
@@ -46,13 +48,14 @@ module.exports = (handlers, runHandlers, logger, app) => {
 
 
     const updatePullRequest = (params) => {
-        const json = {
-            title: params.title,
-            base: params.base,
-            body: params.body,
+        let json = {
             state: params.state,
         };
 
+        if ( params.body != '' ) { json.body = params.body; }
+        if ( params.title != '' ) { json.title = params.title; }
+        if ( params.base != '' ) { json.base = params.base; }
+        
         logger.info("update github pr %s for %s in ns %s", params.pull_number, params.runName, params.runNamespace);
 
         return app.postForInstallation(params, "pulls/"+params.pull_number, json);

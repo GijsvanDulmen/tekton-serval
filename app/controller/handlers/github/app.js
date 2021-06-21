@@ -65,7 +65,12 @@ module.exports = class GithubApp {
             const p = this.post(params.owner, params.repository, url, json, token, contentType)
             if ( resultParser != undefined ) {
                 return p.then(resp => resp.json())
-                        .then(resp => resultParser(resp));
+                        .then(resp => {
+                            if ( resp.errors ) {
+                                throw new Error(resp.errors);
+                            }
+                            return resultParser(resp);
+                        });
             }
             return p.then(() => {});
         });

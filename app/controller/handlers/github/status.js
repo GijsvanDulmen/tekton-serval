@@ -8,12 +8,13 @@ const PipelineRunHandler = require('../../lib/pipelineRunHandler'); // eslint-di
  */
 module.exports = (handlers, runHandlers, logger, app) => {
     const updateStatus = (params, state) => {
-        const json = {
+        let json = {
             state: state,
-            target_url: params.url,
-            description: params.description,
             context: params.context
         };
+
+        if ( params.url != '' ) { json.target_url = params.url; }
+        if ( params.description != '' ) { json.description = params.description; }
 
         logger.info("setting github status on %s for %s in ns %s", params.commit, params.runName, params.runNamespace);
 
@@ -24,9 +25,9 @@ module.exports = (handlers, runHandlers, logger, app) => {
         ...app.getAppParams(),
         
         { name: 'commit' },
-        { name: 'url', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], replace: true },
-        { name: 'description', replace: true, default: "Run $name" },
-        { name: 'context', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], default: 'cicd/serval' },
+        { name: 'url', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], replace: true, default: '' },
+        { name: 'description', replace: true, default: '' },
+        { name: 'context', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], default: 'serval' },
     ];
 
     const prefix = 'github-status';
