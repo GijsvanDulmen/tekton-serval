@@ -13,21 +13,7 @@ if ( process.env.KUBERNETES_SERVICE_HOST ) {
     kc.setCurrentContext('serval-sa'); // is created during cluster setup
 }
 
-// logging
-const { createLogger, format, transports } = require('winston');
- 
-const logger = createLogger({
-  level: 'info',
-  format: format.combine(
-    format.splat(),
-    format.simple()
-  ),
-  defaultMeta: { service: 'serval' },
-  transports: [
-  ],
-});
-
-logger.add(new transports.Console({ format: format.json() }));
+const logger = require('./lib/logger');
 
 const handlers = new CustomTaskHandler(kc, logger);
 const runHandlers = new PipelineRunHandler(kc, logger);
