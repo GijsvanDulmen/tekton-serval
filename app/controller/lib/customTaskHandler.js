@@ -86,7 +86,7 @@ module.exports = class CustomHandler extends CustomObject {
                             
                                 params = this.getParamFetcher().getParam(prefix, paramSpec, params, secret, obj.metadata);
                                 
-                                // explicit annotation
+                                // explicit task params
                                 params = this.getFromTaskSpec(paramSpec, params, obj.spec);
                             });
 

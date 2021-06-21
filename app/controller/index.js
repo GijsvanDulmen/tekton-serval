@@ -37,9 +37,13 @@ require('./handlers/microsoft-teams')(handlers, runHandlers, logger);
 require('./handlers/wait')(handlers, runHandlers, logger);
 
 // slack
-const SlackSocket = require('./lib/slackSocket');
+const SlackSocket = require('./handlers/slack/slackSocket');
 const slackSocket = new SlackSocket(logger);
-require('./handlers/slack')(handlers, runHandlers, logger, authWatcher, slackSocket);
+
+const SlackApi = require('./handlers/slack/slackApi');
+const slackApi = new SlackApi();
+
+require('./handlers/slack')(handlers, runHandlers, logger, authWatcher, slackSocket, slackApi);
 
 // github
 const GithubApp = require('./handlers/github/app');
