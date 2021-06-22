@@ -1,5 +1,5 @@
-const CustomTaskHandler = require('../lib/customTaskHandler'); // eslint-disable-line no-unused-vars
-const PipelineRunHandler = require('../lib/pipelineRunHandler'); // eslint-disable-line no-unused-vars
+const CustomTaskHandler = require('../lib/customTaskHandler');
+const PipelineRunHandler = require('../lib/pipelineRunHandler');
 
 const Bottleneck = require("bottleneck");
 const AuthorizationWatcher = require('../lib/authorizationWatcher');

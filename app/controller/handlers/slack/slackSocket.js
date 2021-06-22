@@ -1,4 +1,4 @@
-const { SocketModeClient, LogLevel } = require('@slack/socket-mode');
+const { SocketModeClient } = require('@slack/socket-mode');
 
 const appToken = process.env.SLACK_APP_TOKEN;
 
