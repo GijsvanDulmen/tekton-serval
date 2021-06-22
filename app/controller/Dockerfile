@@ -1,5 +1,7 @@
 FROM node:15-alpine
 
+LABEL org.opencontainers.image.source https://github.com/GijsvanDulmen/tekton-serval
+
 WORKDIR /usr/src/app
 
 COPY lib/ ./lib
