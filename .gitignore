@@ -3,3 +3,4 @@ app/controller/keys
 integration/secrets
 node_modules
 package-lock.json
+pipelines/keys/
