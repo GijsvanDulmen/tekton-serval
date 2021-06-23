@@ -2,7 +2,7 @@ const CustomObject = require('./customObject');
 
 const APIVERSION = "serval.dev/v1";
 
-module.exports = class CustomHandler extends CustomObject {
+module.exports = class CustomTaskHandler extends CustomObject {
     constructor(kc, logger) {
         super(kc, logger);
         
@@ -62,14 +62,21 @@ module.exports = class CustomHandler extends CustomObject {
         return params;
     }
 
+    isServalCustomTaskToProcess(obj) {
+        if ( obj.status && obj.status.completionTime ) {
+            return false; // already done
+        }
+
+        if ( obj && obj.spec && obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
+            return true;
+        }
+        return false;
+    }
+
     start() {
         this.watch("/apis/tekton.dev/v1alpha1/runs", (phase, obj) => {
             if ( phase == 'ADDED' ) {
-                if ( obj.status && obj.status.completionTime ) {
-                    return; // already done
-                }
-
-                if ( obj && obj.spec && obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
+                if ( this.isServalCustomTaskToProcess(obj) ) {
                     // console.log(JSON.stringify(obj.metadata.annotations, null, 2));
                     // console.log('-----');
 
@@ -102,15 +109,7 @@ module.exports = class CustomHandler extends CustomObject {
                             params.runName = obj.metadata.name;
 
                             this.handlers[obj.spec.ref.kind](params, this.customObjectsApi).then(results => {
-                                let taskResults = [];
-                                if ( results != undefined ) {
-                                    Object.keys(results).forEach(key => {
-                                        taskResults.push({
-                                            name: key,
-                                            value: results[key]
-                                        });
-                                    });
-                                }
+                                let taskResults = this.keyValueToNameValue(results);
                                 
                                 const patch = this.getSuccessPatch(taskResults);
                                 this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
@@ -128,5 +127,18 @@ module.exports = class CustomHandler extends CustomObject {
                 }
             }
         });
+    }
+
+    keyValueToNameValue(results) {
+        let taskResults = [];
+        if ( results != undefined ) {
+            Object.keys(results).forEach(key => {
+                taskResults.push({
+                    name: key,
+                    value: results[key]
+                });
+            });
+        }
+        return taskResults;
     }
 }
