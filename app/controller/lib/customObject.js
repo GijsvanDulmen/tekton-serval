@@ -1,4 +1,6 @@
+const { CustomObjectsApi } = require('@kubernetes/client-node');
 const k8s = require('@kubernetes/client-node');
+const { startTimer } = require('./logger');
 const ParamFetcher = require('./paramFetcher');
 
 module.exports = class CustomObject {
@@ -11,10 +13,16 @@ module.exports = class CustomObject {
     }
 
     watch(resource, handler) {
-        this.watcher.watch(resource, {}, (phase, obj) => handler(phase, obj)).catch(err => {
-            this.logger.error("error watching for %s", resource);
-            this.logger.error(err);
-        });
+        const start = () => {
+            this.logger.info("starting watch for %s", resource);
+            this.watcher.watch(resource, {}, (phase, obj) => handler(phase, obj)).catch(err => {
+                this.logger.error("error watching for %s", resource);
+                this.logger.error(err);
+                
+                this.logger.info("restarting watch for %s in 5s", resource);
+                setTimeout(() => start(), 5000);
+            });
+        };
     }
 
     /**
