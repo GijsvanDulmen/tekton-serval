@@ -57,7 +57,6 @@ describe('CustomTaskHandler', function () {
                     { name: 'webhookUrl', value: 'url2' }
                 ]
             });
-            console.log(results);
             expect(results.webhookUrl).to.eq('url2');
         });
 
@@ -71,7 +70,6 @@ describe('CustomTaskHandler', function () {
                     { name: 'webhookUrl', value: 'url2' }
                 ]
             });
-            console.log(results);
             expect(results.webhookUrl).to.eq(undefined);
         });
 
@@ -83,7 +81,6 @@ describe('CustomTaskHandler', function () {
             const results = cth.getFromTaskSpec(spec, {}, {
                 params: []
             });
-            console.log(results);
             expect(results.webhookUrl).to.eq(undefined);
         });
     });
