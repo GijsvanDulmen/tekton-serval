@@ -74,7 +74,8 @@ stringData:
   slack-channel: '#tekton-dev'
 ```
 Make sure the secret is named `serval`. This is the only secret Serval has acccess to in your namespace.
-This is really helpfull when you also want to to configure tokens for Slack.
+This is really helpfull when you also want to to configure tokens for Slack. Currently you need to
+assign an RBAC rule for this authorization. Checkout [over here](https://github.com/GijsvanDulmen/tekton-serval/blob/main/integration/rbac.yaml).
 
 If all else fails, for certain parameters you can also add environment variables to the Serval controller deployment.
 
@@ -93,13 +94,13 @@ data:
   config: |
     {
       "github.installation.authorization": {
-        "pipelines": ["17456888"]
+        "your-namespace": ["17456888"]
       },
       "slack.channel.authorization": {
-        "pipelines": ["#tekton-dev", "#serval"]
+        "your-namespace": ["#tekton-dev", "#serval"]
       }
     } 
 ```
 
 # Installation
-Currently it is in development. 
+Checkout the `install` directory for installation scripts. It's still in beta though.
