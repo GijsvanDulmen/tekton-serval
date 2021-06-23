@@ -73,6 +73,10 @@ module.exports = (handlers, runHandlers, logger, authWatcher, slackSocket, slack
     );
 
     const sendByApi = (params, message) => {
+        if ( slackApi == undefined || slackSocket == undefined ) {
+            return Promise.reject("no slack api setup");
+        }
+
         if ( !authWatcher.hasSlackChannelAuthorization(params.runNamespace, params.channel) ) {
             return Promise.reject("no authorization for this namespace and channel combination");
         }
@@ -90,6 +94,10 @@ module.exports = (handlers, runHandlers, logger, authWatcher, slackSocket, slack
     );
 
     const approveByApi = (params, message) => {
+        if ( slackApi == undefined || slackSocket == undefined ) {
+            return Promise.reject("no slack api setup");
+        }
+
         if ( !authWatcher.hasSlackChannelAuthorization(params.runNamespace, params.channel) ) {
             return Promise.reject("no authorization for this namespace and channel combination");
         }

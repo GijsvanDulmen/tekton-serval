@@ -23,13 +23,17 @@ require('./handlers/microsoft-teams')(handlers, runHandlers, logger);
 require('./handlers/wait')(handlers, runHandlers, logger);
 
 // slack
-const SlackSocket = require('./handlers/slack/slackSocket');
-const slackSocket = new SlackSocket(logger);
+if ( process.env.SLACK_APP_TOKEN !== undefined
+    && process.env.SLACK_BOT_TOKEN !== undefined ) {
+    const SlackSocket = require('./handlers/slack/slackSocket');
+    const slackSocket = new SlackSocket(logger, process.env.SLACK_APP_TOKEN);
 
-const SlackApi = require('./handlers/slack/slackApi');
-const slackApi = new SlackApi();
-
-require('./handlers/slack')(handlers, runHandlers, logger, authWatcher, slackSocket, slackApi);
+    const SlackApi = require('./handlers/slack/slackApi');
+    const slackApi = new SlackApi(process.env.SLACK_BOT_TOKEN);
+    require('./handlers/slack')(handlers, runHandlers, logger, authWatcher, slackSocket, slackApi);
+} else {
+    require('./handlers/slack')(handlers, runHandlers, logger, authWatcher, undefined, undefined);
+}
 
 // github
 const GithubApp = require('./handlers/github/app');

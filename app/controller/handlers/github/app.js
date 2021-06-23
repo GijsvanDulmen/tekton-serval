@@ -23,8 +23,11 @@ module.exports = class GithubApp {
 
         return limiter.schedule(() => {
             return new Promise((res, rej) => {
-                if ( process.env.GITHUB_APP_KEY == undefined ) {
-                    return rej("No github app key configured");
+                if ( process.env.GITHUB_APP_KEY == undefined
+                    || process.env.GITHUB_APP_ID == undefined
+                    || process.env.GITHUB_APP_CLIENT_ID == undefined
+                    || process.env.GITHUB_APP_CLIENT_SECRET == undefined ) {
+                    return rej("No github app configured");
                 }
 
                 const auth = createAppAuth({

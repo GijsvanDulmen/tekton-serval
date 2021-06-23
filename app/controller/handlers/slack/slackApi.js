@@ -1,10 +1,8 @@
 const { IncomingWebhook } = require('@slack/webhook');
 const { WebClient } = require('@slack/web-api');
 
-const botToken = process.env.SLACK_BOT_TOKEN;
-
 module.exports = class SlackApi {
-    constructor() {
+    constructor(botToken) {
         this.web = new WebClient(botToken);
     }
 

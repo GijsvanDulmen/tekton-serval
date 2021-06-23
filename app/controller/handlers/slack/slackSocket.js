@@ -1,9 +1,7 @@
 const { SocketModeClient } = require('@slack/socket-mode');
 
-const appToken = process.env.SLACK_APP_TOKEN;
-
 module.exports = class SlackSocket {
-    constructor(logger) {
+    constructor(logger, appToken) {
         this.client = new SocketModeClient({
             appToken
         });
@@ -29,7 +27,6 @@ module.exports = class SlackSocket {
         this.client.on('connected', () => {
             this.logger.info("slack socket connected")
         });
-        
         
         this.client.on('interactive', ({ body, ack }) => {
             ack().then(() => {
