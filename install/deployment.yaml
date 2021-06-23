@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: serval
+  name: serval
+  namespace: serval
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: serval
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: serval
+    spec:
+      serviceAccountName: serval
+      containers:
+      - name: serval
+        image: ghcr.io/gijsvandulmen/serval:latest
+        imagePullPolicy: Always
+        envFrom:
+        - secretRef:
+            name: serval
+        resources:
+          limits:
+            cpu: 250m
+            memory: 200Mi
+          requests:
+            cpu: 50m
+            memory: 50Mi
+      terminationGracePeriodSeconds: 5
