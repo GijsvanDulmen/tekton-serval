@@ -7,11 +7,12 @@ it makes it a lot faster. It uses the Custom Tasks functionality of Tekton and i
 It supports the following tasks, sometimes this includes namespace based authorization for multi tenant setups.
 
 ## Slack
-- Message through Webhook URL
-- Message through Web API with bot token
-- Approval task (reject/approve)
-- Pipeline Run status monitoring
+Serval provides several ways of interacting with Slack:
 
+- [Incoming webhook URL](./docs/slack/incoming-webhooks.md)
+- [PipelineRun Notifier](./docs/slack/pipelinerun.md)
+- [Bot Web API - Message](./docs/slack/bot-api.md)
+- [Bot Web API - Approval](./docs/slack/approval.md)
 ## Microsoft Teams
 - Microsoft Teams notification through Webhook URL
 - Microsft Teams Pipeline Run status monitoring
