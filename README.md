@@ -18,12 +18,12 @@ Serval provides several ways of interacting with Slack:
 - [PipelineRun Notifier](./docs/teams/pipelinerun.md)
 
 ## Github support through Github App
-- Commit Status Pipeline Run status synchronizer
-- Open/Update Pull Request
-- Assign reviewers to Pull Request
-- Add comment to Pull Request
-- Create Deployment
-- Update Deployment Status
+- [Commit Status Pipeline Run status synchronizer](./integration/tests/tests/github-status-pipelinerun.yaml)
+- [Open/Update Pull Request](./integration/tests/tests/github-pullrequest.yaml)
+- [Assign reviewers to Pull Request](./integration/tests/tests/github-pullrequest.yaml)
+- [Add comment to Pull Request](./integration/tests/tests/github-pullrequest.yaml)
+- [Create Deployment](./integration/tests/tests/github-deployments.yaml)
+- [Update Deployment Status](./integration/tests/tests/github-status.yaml)
 
 Checkout the `integration/tests/tests` directory for some examples on how to configure those tasks.
 
