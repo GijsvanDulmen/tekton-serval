@@ -14,8 +14,8 @@ Serval provides several ways of interacting with Slack:
 - [Bot Web API - Message](./docs/slack/bot-api.md)
 - [Bot Web API - Approval](./docs/slack/approval.md)
 ## Microsoft Teams
-- Microsoft Teams notification through Webhook URL
-- Microsft Teams Pipeline Run status monitoring
+- [Notification through Webhook URL](./docs/teams/message.md)
+- [PipelineRun Notifier](./docs/teams/pipelinerun.md)
 
 ## Github support through Github App
 - Commit Status Pipeline Run status synchronizer

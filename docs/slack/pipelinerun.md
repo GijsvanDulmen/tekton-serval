@@ -8,7 +8,7 @@ Use it like this:
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  generateName: serval-run-
+  generateName: slack-run
   annotations:
     # this annotation enables notifications
     serval.dev/monitor-run: 'slack'
