@@ -5,3 +5,4 @@ node_modules
 package-lock.json
 pipelines/keys/
 install/secrets/
+app/controller/.nyc*

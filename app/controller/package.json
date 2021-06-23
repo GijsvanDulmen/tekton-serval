@@ -4,7 +4,7 @@
   "description": "Serval Tekton Custom Task Controller",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
+    "test": "nyc --reporter=text mocha",
     "lint": "node ./node_modules/eslint/bin/eslint.js ."
   },
   "author": "Gijs van Dulmen",
@@ -21,8 +21,9 @@
     "winston": "^3.3.3"
   },
   "devDependencies": {
+    "chai": "*",
     "eslint": "^7.29.0",
     "mocha": "^9.0.1",
-    "chai": "*"
+    "nyc": "^15.1.0"
   }
 }
