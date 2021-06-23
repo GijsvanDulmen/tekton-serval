@@ -1,6 +1,4 @@
-const { CustomObjectsApi } = require('@kubernetes/client-node');
 const k8s = require('@kubernetes/client-node');
-const { startTimer } = require('./logger');
 const ParamFetcher = require('./paramFetcher');
 
 module.exports = class CustomObject {
@@ -45,7 +43,7 @@ module.exports = class CustomObject {
         return new Promise(res => { 
             let needSecretCheck = false;
             paramSpecs.forEach(paramSpec => {
-                if ( paramSpec.sources && paramSpec.sources.indexOf('namespace-secret') ) {
+                if ( paramSpec.sources && paramSpec.sources.indexOf('namespace-secret') != -1 ) {
                     needSecretCheck = true;
                 }
             });
