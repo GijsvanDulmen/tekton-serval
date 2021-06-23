@@ -3,6 +3,8 @@ kind: PipelineRun
 metadata:
   generateName: serval-run-
   namespace: pipelines
+  annotations:
+    serval.dev/slack-channel: "#serval"
 spec:
   timeout: "0h0m10s"
   pipelineSpec:
@@ -12,8 +14,6 @@ spec:
         apiVersion: serval.dev/v1
         kind: SlackApprove
       params:
-      - name: channel
-        value: "#serval"
       - name: message
         value: ":question: Approve?"
       # in seconds
@@ -30,8 +30,6 @@ spec:
         apiVersion: serval.dev/v1
         kind: SlackWrite
       params:
-      - name: channel
-        value: "#serval"
       - name: message
         value: ":ok_hand: Timeout!"
     - name: slack-approved
@@ -45,8 +43,6 @@ spec:
         apiVersion: serval.dev/v1
         kind: SlackWrite
       params:
-      - name: channel
-        value: "#serval"
       - name: message
         value: ":ok_hand: Approved!"
     - name: slack-rejected
@@ -60,7 +56,5 @@ spec:
         apiVersion: serval.dev/v1
         kind: SlackWrite
       params:
-      - name: channel
-        value: "#serval"
       - name: message
         value: ":ok_hand: Rejected!"
