@@ -27,6 +27,11 @@ Serval provides several ways of interacting with Slack:
 
 Checkout the `integration/tests/tests` directory for some examples on how to configure those tasks.
 
+# Installation
+Checkout the `install` directory for installation scripts. It's still in beta though, but usable!
+Create your secret from the `secret.template` and apply `rbac.yaml` and `deployment.yaml` after
+you applied the secret to your cluster.
+
 # Multiple options for parameters
 Besides having parameters added to your task like this:
 ```yaml
@@ -102,6 +107,3 @@ data:
       }
     } 
 ```
-
-# Installation
-Checkout the `install` directory for installation scripts. It's still in beta though.
