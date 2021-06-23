@@ -34,52 +34,69 @@ module.exports = class PipelineRunHandler extends CustomObject {
                 return;
             }
 
-            let monitorRun = [];
-            Object.keys(obj.metadata.annotations).forEach(key => {
-                if ( key == 'serval.dev/monitor-run' ) {
-                    monitorRun = obj.metadata.annotations[key].split(",");
+            this.processForEachEvent(obj, (handler, obj) => {
+                this.processHandler(handler, obj);
+            });
+        });
+    }
+
+    processForEachEvent(obj, callback) {
+        let monitorRun = this.getMonitors(obj);
+        if ( monitorRun.length == 0 ) {
+            return;
+        }
+        
+        if ( obj.status && obj.status.conditions ) {
+            obj.status.conditions.forEach(condition => {
+                if ( condition.type != 'Succeeded' ) {
+                    return;
+                }
+
+                let processEvent = this.getEventFromCondition(condition);
+                if ( processEvent != false ) {
+                    this.events[processEvent].forEach(handler => {
+                        if ( monitorRun.indexOf(handler.on) != -1 ) {
+                            callback(handler, obj);
+                        }
+                    });
                 }
             });
+        }
+    }
 
-            if ( monitorRun.length == 0 ) {
-                return;
+    getMonitors(obj) {
+        let monitorRun = [];
+        if ( obj.metadata && obj.metadata.annotations ) {
+            Object.keys(obj.metadata.annotations).forEach(key => {
+                if ( key == 'serval.dev/monitor-run' ) {
+                    monitorRun = obj.metadata.annotations[key].split(",").filter(v => v != '');
+                }
+            });
+        }
+        return monitorRun;
+    }
+
+    getEventFromCondition(condition) {
+        if ( condition.status == undefined || condition.reason == undefined ) {
+            return false; // safety guard
+        } else if ( condition.status == 'Unknown' && condition.reason == 'Running' ) {
+            return 'started';
+        } else if ( condition.status == 'True' && condition.reason == 'Succeeded' ) {
+            return 'succeeded';
+        } else if ( condition.status == 'True' && condition.reason == 'Completed' ) {
+            return 'succeeded';
+        } else if ( condition.status == 'False' ) {
+            if ( condition.reason == 'PipelineRunCancelled' ) {
+                return 'cancelled';
+            } else if ( condition.reason == 'PipelineRunTimeout' ) {
+                return 'failed';
+            } else if ( condition.reason == 'Failed' ) {
+                return 'failed';
+            } else {
+                return 'failed';
             }
-           
-            if ( obj.status && obj.status.conditions ) {
-                obj.status.conditions.forEach(condition => {
-                    if ( condition.type != 'Succeeded' ) {
-                        return;
-                    }
-
-                    let processEvent = false;
-                    if ( condition.status == 'Unknown' && condition.reason == 'Running' ) {
-                        processEvent = 'started';
-                    } else if ( condition.status == 'True' && condition.reason == 'Succeeded' ) {
-                        processEvent = 'succeeded';
-                    } else if ( condition.status == 'True' && condition.reason == 'Completed' ) {
-                        processEvent = 'succeeded';
-                    } else if ( condition.status == 'False' ) {
-                        if ( condition.reason == 'PipelineRunCancelled' ) {
-                            processEvent = 'cancelled';
-                        } else if ( condition.reason == 'PipelineRunTimeout' ) {
-                            processEvent = 'failed';
-                        } else if ( condition.reason == 'Failed' ) {
-                            processEvent = 'failed';
-                        } else {
-                            processEvent = 'failed';
-                        }
-                    }
-
-                    if ( processEvent != false ) {
-                        this.events[processEvent].forEach(handler => {
-                            if ( monitorRun.indexOf(handler.on) != -1 ) {
-                                this.processHandler(handler, obj);
-                            }
-                        });
-                    }
-                });
-            }
-        });
+        }
+        return false;
     }
 
     processHandler(handler, obj) {
