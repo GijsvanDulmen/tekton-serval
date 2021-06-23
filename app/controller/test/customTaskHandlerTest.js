@@ -84,4 +84,48 @@ describe('CustomTaskHandler', function () {
             expect(results.webhookUrl).to.eq(undefined);
         });
     });
+
+    describe('getSuccessPatch', function () {
+        const cth = new CustomTaskHandler(kc, logger);
+
+        it('should create success patch', function () {
+            const patch = cth.getSuccessPatch({ a: "b" });
+            expect(patch[0].value.conditions[0].message).to.eq('Successfull');
+            expect(patch[0].value.conditions[0].reason).to.eq('Successfull');
+            expect(patch[0].value.conditions[0].status).to.eq('True');
+            expect(patch[0].value.conditions[0].type).to.eq("Succeeded");
+            expect(patch[0].value.results.a).to.eq("b");
+        });
+    });
+
+    describe('getFailurePatch', function () {
+        const cth = new CustomTaskHandler(kc, logger);
+
+        it('should create success patch', function () {
+            const patch = cth.getFailurePatch("failezz");
+            expect(patch[0].value.conditions[0].message).to.eq('failezz');
+            expect(patch[0].value.conditions[0].reason).to.eq('failezz');
+            expect(patch[0].value.conditions[0].status).to.eq('False');
+            expect(patch[0].value.conditions[0].type).to.eq("Succeeded");
+            expect(Object.keys(patch[0].value.results).length).to.eq(0);
+        });
+    });
+
+    describe('getPatch', function () {
+        const cth = new CustomTaskHandler(kc, logger);
+
+        it('should create patch', function () {
+            const patch = cth.getFailurePatch("failezz");
+            expect(patch[0].op).to.eq('replace');
+            expect(patch[0].path).to.eq('/status');
+        });
+    });
+
+    describe('addHandler', function () {
+        const cth = new CustomTaskHandler(kc, logger);
+
+        it('should add handler', function () {
+            cth.addHandler('name', () => {}, {}, 'prefix');
+        });
+    });
 });
