@@ -21,6 +21,7 @@ module.exports = class CustomObject {
                 setTimeout(() => start(), 5000);
             });
         };
+        start();
     }
 
     /**

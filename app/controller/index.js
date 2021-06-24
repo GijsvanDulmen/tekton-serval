@@ -31,7 +31,7 @@ if ( process.env.SLACK_APP_TOKEN !== undefined
     const SlackApi = require('./handlers/slack/slackApi');
     const slackApi = new SlackApi(process.env.SLACK_BOT_TOKEN);
     require('./handlers/slack')(handlers, runHandlers, logger, authWatcher, slackSocket, slackApi);
-    
+
     slackSocket.start(); 
 } else {
     require('./handlers/slack')(handlers, runHandlers, logger, authWatcher, undefined, undefined);

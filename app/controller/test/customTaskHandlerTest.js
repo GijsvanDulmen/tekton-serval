@@ -31,6 +31,7 @@ describe('CustomTaskHandler', function () {
     describe('isServalCustomTaskToProcess', function () {
         const cth = new CustomTaskHandler(kc, logger);
             
+        // task ref
         it('should not process completed runs', function () {
             expect(cth.isServalCustomTaskToProcess({ status: { completionTime: '123' } })).to.eq(false);
         });
@@ -42,7 +43,60 @@ describe('CustomTaskHandler', function () {
         it('should not process other runs', function () {
             expect(cth.isServalCustomTaskToProcess({ spec: { ref: { apiVersion: 'tekton.dev/v1' } } })).to.eq(false);
         });
+
+        // task spec
+        it('should process not completed task spec runs', function () {
+            expect(cth.isServalCustomTaskToProcess({ spec: { spec: { apiVersion: 'serval.dev/v1' } } })).to.eq(true);
+        });
+
+        it('should not process other runs', function () {
+            expect(cth.isServalCustomTaskToProcess({ spec: { spec: { apiVersion: 'tekton.dev/v1' } } })).to.eq(false);
+        });
     });
+
+    describe('generifyCustomTask', function() {
+        const cth = new CustomTaskHandler(kc, logger);
+            
+        it('should generify task by spec', function () {
+            const generified = cth.generifyCustomTask({
+                "spec": {
+                    "serviceAccountName": "default",
+                    "spec": {
+                        "apiVersion": "serval.dev/v1",
+                        "kind": "Wait",
+                        "metadata": {},
+                        "spec": {
+                            "waitFor": "2"
+                        }
+                    }
+                }
+            })
+            expect(generified.kind).to.eq('Wait');
+            expect(generified.params[0].name).to.eq('waitFor');
+            expect(generified.params[0].value).to.eq("2");
+        });
+
+        it('should generify task by ref', function () {
+            const generified = cth.generifyCustomTask({
+                "spec": {
+                    "params": [
+                        {
+                            "name": "waitFor",
+                            "value": "2"
+                        }
+                    ],
+                    "ref": {
+                        "apiVersion": "serval.dev/v1",
+                        "kind": "Wait"
+                    },
+                    "serviceAccountName": "default"
+                }
+            })
+            expect(generified.kind).to.eq('Wait');
+            expect(generified.params[0].name).to.eq('waitFor');
+            expect(generified.params[0].value).to.eq("2");
+        });
+    })
 
     describe('getFromTaskSpec', function () {
         const cth = new CustomTaskHandler(kc, logger);

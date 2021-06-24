@@ -66,27 +66,63 @@ module.exports = class CustomTaskHandler extends CustomObject {
         if ( obj.status && obj.status.completionTime ) {
             return false; // already done
         }
-
-        if ( obj && obj.spec && obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
-            return true;
+        if ( obj && obj.spec ) {
+            if ( obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
+                return true;
+            } else if ( obj.spec.spec && obj.spec.spec.apiVersion == APIVERSION ) {
+                return true;
+            }
         }
         return false;
     }
 
+    generifyCustomTask(obj) {
+        if ( obj && obj.spec ) {
+            if ( obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
+                return {
+                    kind: obj.spec.ref.kind,
+                    params: obj.spec.params == undefined ? [] : obj.spec.params
+                };
+            } else if ( obj.spec.spec && obj.spec.spec.apiVersion == APIVERSION ) {
+                const params = this.keyValueToNameValue(obj.spec.spec.spec);
+                params.forEach(param => {
+                    if ( typeof param.value != 'string' ) {
+                        throw new Error("param " + param.name + " should be a string");
+                    }
+                });
+
+                return {
+                    kind: obj.spec.spec.kind,
+                    params: params
+                };
+            }
+        }
+        return {};   
+    }
+
     start() {
-        this.watch("/apis/tekton.dev/v1alpha1/runs", (phase, obj) => {
+        this.watch("/apis/tekton.dev/v1alpha1/runs", (phase, obj) => {            
             if ( phase == 'ADDED' ) {
                 if ( this.isServalCustomTaskToProcess(obj) ) {
-                    // console.log(JSON.stringify(obj.metadata.annotations, null, 2));
+                    // console.log(JSON.stringify(obj, null, 2));
                     // console.log('-----');
 
-                    if ( this.handlers[obj.spec.ref.kind] ) {
+                    let run;
+                    try {
+                        run = this.generifyCustomTask(obj);
+                    } catch(err) {
+                        const patch = this.getFailurePatch(err.message);
+                        this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
+                        return;
+                    }
+                    
+                    if ( this.handlers[run.kind] ) {
                         let params = {};
-                        let prefix = this.handlerPrefix[obj.spec.ref.kind];
+                        let prefix = this.handlerPrefix[run.kind];
 
                         // check if there are secrets needed
-                        this.fetchSecretIfNeeded(this.paramSpecs[obj.spec.ref.kind], obj.metadata.namespace).then(secret => {
-                            this.paramSpecs[obj.spec.ref.kind].forEach(paramSpec => {
+                        this.fetchSecretIfNeeded(this.paramSpecs[run.kind], obj.metadata.namespace).then(secret => {
+                            this.paramSpecs[run.kind].forEach(paramSpec => {
                                 if ( paramSpec.sources == undefined ) {
                                     paramSpec.sources = ['pipelinerun', 'taskparam'];
                                 }
@@ -94,11 +130,11 @@ module.exports = class CustomTaskHandler extends CustomObject {
                                 params = this.getParamFetcher().getParam(prefix, paramSpec, params, secret, obj.metadata);
                                 
                                 // explicit task params
-                                params = this.getFromTaskSpec(paramSpec, params, obj.spec);
+                                params = this.getFromTaskSpec(paramSpec, params, run);
                             });
 
                             // check if all params are there
-                            if ( this.paramSpecs[obj.spec.ref.kind].length != Object.keys(params).length ) {
+                            if ( this.paramSpecs[run.kind].length != Object.keys(params).length ) {
                                 const patch = this.getFailurePatch("Parameters missing, consult documentation");
                                 this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
                                 return;
@@ -108,13 +144,13 @@ module.exports = class CustomTaskHandler extends CustomObject {
                             params.runNamespace = obj.metadata.namespace;
                             params.runName = obj.metadata.name;
 
-                            this.handlers[obj.spec.ref.kind](params, this.customObjectsApi).then(results => {
+                            this.handlers[run.kind](params, this.customObjectsApi).then(results => {
                                 let taskResults = this.keyValueToNameValue(results);
                                 
                                 const patch = this.getSuccessPatch(taskResults);
                                 this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
                             }).catch(err => {
-                                this.logger.error("error executing %s in %s for %s", obj.spec.ref.kind, obj.metadata.namespace, obj.metadata.name);
+                                this.logger.error("error executing %s in %s for %s", run.kind, obj.metadata.namespace, obj.metadata.name);
                                 this.logger.error(err);
                                 const patch = typeof err == 'string' ? this.getFailurePatch(err) : this.getFailurePatch("Failed");
                                 this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
