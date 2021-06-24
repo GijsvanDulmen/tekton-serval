@@ -25,12 +25,14 @@ require('./handlers/wait')(handlers, runHandlers, logger);
 // slack
 if ( process.env.SLACK_APP_TOKEN !== undefined
     && process.env.SLACK_BOT_TOKEN !== undefined ) {
-    const SlackSocket = require('./handlers/slack/slackSocket');
-    const slackSocket = new SlackSocket(logger, process.env.SLACK_APP_TOKEN);
+    const Socket = require('./handlers/slack/slackSocket');
+    const slackSocket = new Socket(logger, process.env.SLACK_APP_TOKEN);
 
     const SlackApi = require('./handlers/slack/slackApi');
     const slackApi = new SlackApi(process.env.SLACK_BOT_TOKEN);
     require('./handlers/slack')(handlers, runHandlers, logger, authWatcher, slackSocket, slackApi);
+    
+    slackSocket.start(); 
 } else {
     require('./handlers/slack')(handlers, runHandlers, logger, authWatcher, undefined, undefined);
 }
@@ -46,4 +48,3 @@ require('./handlers/github/pullrequest')(handlers, runHandlers, logger, app);
 authWatcher.start();
 handlers.start();
 runHandlers.start();
-slackSocket.start();
