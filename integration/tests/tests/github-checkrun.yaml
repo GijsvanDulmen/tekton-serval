@@ -1,0 +1,71 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+  annotations:
+    serval.dev/github-checkrun-owner: "GijsvanDulmen"
+    serval.dev/github-checkrun-repository: "tekton-serval"
+    serval.dev/github-checkrun-installation-id: "17456888"
+
+    # defaults
+    serval.dev/github-checkrun-url: "https://github.com/GijsvanDulmen/tekton-serval/$name"
+    serval.dev/wait-waitFor: "2"
+spec:
+  timeout: "0h0m40s"
+  pipelineSpec:
+    tasks:
+    - name: github-open-checkrun
+      taskSpec:
+        apiVersion: serval.dev/v1
+        kind: GithubCreateCheckRun
+        spec:
+          commit: "dafadee5c88f5dea455b6947858789a88ecfa038"
+          name: unittest
+          status: in_progress
+          title: Unit Test
+          summary: Very *important* summary
+          text: |
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce in volutpat metus.
+              Nunc at metus ac enim malesuada laoreet eu sit amet dui. Curabitur nec pretium velit.
+              Proin faucibus quis est eu iaculis. Vestibulum posuere vulputate neque.
+              Proin id lorem id turpis feugiat dignissim. Morbi pretium odio sem, aliquam blandit lacus lacinia in. 
+    - name: github-open-another-checkrun
+      taskSpec:
+        apiVersion: serval.dev/v1
+        kind: GithubCreateCheckRun
+        spec:
+          commit: "dafadee5c88f5dea455b6947858789a88ecfa038"
+          name: linting
+          status: in_progress
+          title: Linting
+          summary: Very *important* summary
+    - name: wait-after-open
+      runAfter:
+      - github-open-checkrun
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: Wait
+    - name: github-update-checkrun
+      runAfter:
+      - wait-after-open
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: GithubUpdateCheckRun
+      params:
+        - name: id
+          value: $(tasks.github-open-checkrun.results.id)
+        - name: name
+          value: unittest
+        - name: status
+          value: in_progress
+        - name: conclusion
+          value: success
+        - name: completed
+          value: "yes"
+        - name: title
+          value: Unit Test
+        - name: summary
+          value: Very *important* summary - All passed!
+        - name: text
+          value: 100% coverage

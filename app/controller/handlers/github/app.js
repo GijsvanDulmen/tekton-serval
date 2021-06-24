@@ -44,16 +44,15 @@ module.exports = class GithubApp {
         });
     }
 
-    post(owner, repository, url, json, token, contentType) {
+    post(owner, repository, url, json, token, contentType, method) {
         if ( contentType == undefined ) {
             contentType == 'application/vnd.github.v3+json';
         }
 
         const completeUrl = "https://api.github.com/repos/"+owner+"/"+repository+"/"+url;
-
         return fetch(completeUrl, {
-            method: 'post',
-            body:    JSON.stringify(json),
+            method: method,
+            body: JSON.stringify(json),
             headers: {
                 "User-Agent": "Serval Tekton, the fast cat",
                 'Content-Type': 'application/json',
@@ -63,15 +62,19 @@ module.exports = class GithubApp {
         });
     }
 
-    postForInstallation(params, url, json, resultParser, contentType) {
+    postForInstallation(params, url, json, resultParser, contentType, method) {
+        method = method == undefined ? 'post' : method;
         return this.token(params["installation-id"], params.runNamespace).then(token => {
-            const p = this.post(params.owner, params.repository, url, json, token, contentType)
+            const p = this.post(params.owner, params.repository, url, json, token, contentType, method)
             if ( resultParser != undefined ) {
                 return p.then(resp => resp.json())
                         .then(resp => {
                             if ( resp.errors ) {
                                 throw new Error(resp.errors);
                             }
+                            if ( resp.message ) {
+                                throw new Error(resp.message);
+                            }   
                             return resultParser(resp);
                         });
             }

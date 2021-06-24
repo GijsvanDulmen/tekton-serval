@@ -24,6 +24,7 @@ Serval provides several ways of interacting with Slack:
 - [Add comment to Pull Request](./integration/tests/tests/github-pullrequest.yaml)
 - [Create Deployment](./integration/tests/tests/github-deployments.yaml)
 - [Update Deployment Status](./integration/tests/tests/github-status.yaml)
+- [Create/Update Checkrun](./integration/tests/tests/github-checkrun.yaml)
 
 Checkout the `integration/tests/tests` directory for some examples on how to configure those tasks.
 

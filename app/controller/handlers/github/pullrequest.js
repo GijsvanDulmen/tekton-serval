@@ -20,7 +20,6 @@ module.exports = (handlers, runHandlers, logger, app) => {
         logger.info("open github pr for %s in ns %s", params.runName, params.runNamespace);
 
         return app.postForInstallation(params, "pulls", json, resp => {
-            console.log(resp);
             return {
                 id: new String(resp.id),
                 number: new String(resp.number)

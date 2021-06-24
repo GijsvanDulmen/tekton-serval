@@ -131,11 +131,22 @@ module.exports = class CustomTaskHandler extends CustomObject {
                                 
                                 // explicit task params
                                 params = this.getFromTaskSpec(paramSpec, params, run);
+
+                                if ( params[paramSpec.name] != undefined && paramSpec.replace ) {
+                                    params[paramSpec.name] = params[paramSpec.name].replace("$name", obj.metadata.labels["tekton.dev/pipelineRun"]);
+                                }
                             });
 
                             // check if all params are there
                             if ( this.paramSpecs[run.kind].length != Object.keys(params).length ) {
-                                const patch = this.getFailurePatch("Parameters missing, consult documentation");
+                                let missing = [];
+                                this.paramSpecs[run.kind].forEach(paramSpec => {
+                                    if ( params[paramSpec.name] == undefined ) {
+                                        missing.push(paramSpec.name);
+                                    }
+                                });
+
+                                const patch = this.getFailurePatch("Parameters " + missing.join(',') + " missing, consult documentation");
                                 this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
                                 return;
                             }

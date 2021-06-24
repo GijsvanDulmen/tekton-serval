@@ -43,6 +43,7 @@ const app = new GithubApp(authWatcher);
 require('./handlers/github/status')(handlers, runHandlers, logger, app);
 require('./handlers/github/deployment')(handlers, runHandlers, logger, app);
 require('./handlers/github/pullrequest')(handlers, runHandlers, logger, app);
+require('./handlers/github/checkrun')(handlers, runHandlers, logger, app);
 
 // start all
 authWatcher.start();
