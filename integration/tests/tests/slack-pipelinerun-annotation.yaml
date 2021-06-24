@@ -4,7 +4,7 @@ metadata:
   generateName: serval-run-
   namespace: pipelines
   annotations:
-    serval.dev/slack-channel: "#tekton-dev"
+    serval.dev/slack-channel: "#serval"
     serval.dev/slack-runStarted: ":alarm_clock: Run Started - Annotations"
     serval.dev/slack-runSucceeded: ":partying_face: Run Succeeded - Annotations"
     serval.dev/monitor-run: 'slack'

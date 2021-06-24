@@ -41,9 +41,19 @@ Besides having parameters added to your task like this:
         kind: SlackNotification
       params:
       - name: channel
-        value: "#tekton-dev"
+        value: "#serval"
       - name: message
         value: ":ok_hand: Hi!"
+```
+Or like this (this doesn't support variable substition):
+```yaml
+    - name: slack-notification
+      taskSpec:
+        apiVersion: serval.dev/v1
+        kind: SlackWrite
+        spec:
+          channel: "#serval"
+          value: ":ok_hand: Hi!"
 ```
 
 You can also upgrade to PipelineRun parameters which will be used within all tasks in the pipeline run:
@@ -54,7 +64,7 @@ metadata:
   generateName: serval
   namespace: pipelines
   annotations:
-    serval.dev/slack-channel: "#tekton-dev"
+    serval.dev/slack-channel: "#serval"
 spec:
   timeout: "0h0m10s"
   pipelineSpec:
@@ -77,7 +87,7 @@ metadata:
   namespace: pipelines
 type: Opaque
 stringData:
-  slack-channel: '#tekton-dev'
+  slack-channel: '#serval'
 ```
 Make sure the secret is named `serval`. This is the only secret Serval has acccess to in your namespace.
 This is really helpfull when you also want to to configure tokens for Slack. Currently you need to
@@ -103,7 +113,7 @@ data:
         "your-namespace": ["17456888"]
       },
       "slack.channel.authorization": {
-        "your-namespace": ["#tekton-dev", "#serval"]
+        "your-namespace": ["#serval"]
       }
     } 
 ```

@@ -13,6 +13,6 @@ spec:
         kind: SlackNotification
       params:
       - name: channel
-        value: "#tekton-dev"
+        value: "#serval"
       - name: message
         value: ":ok_hand: Serval - TaskParam"

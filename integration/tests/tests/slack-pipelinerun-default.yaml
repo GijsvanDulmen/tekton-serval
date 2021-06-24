@@ -4,7 +4,7 @@ metadata:
   generateName: serval-run-
   namespace: pipelines
   annotations:
-    serval.dev/slack-channel: "#tekton-dev"
+    serval.dev/slack-channel: "#serval"
     # no annotations = default message!
     serval.dev/monitor-run: 'slack'
 spec:

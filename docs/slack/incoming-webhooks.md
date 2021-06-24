@@ -39,7 +39,7 @@ spec:
       params:
       # override channel per task
       - name: channel
-        value: "#tekton-dev"
+        value: "#serval"
       - name: message
         value: ":ok_hand: Hello world!"
 ```
@@ -52,7 +52,7 @@ metadata:
   generateName: slack-run
   namespace: team-namespace
   annotations:
-    serval.dev/slack-channel: "#tekton-dev"
+    serval.dev/slack-channel: "#serval"
 spec:
   pipelineSpec:
     tasks:
