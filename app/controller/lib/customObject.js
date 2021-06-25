@@ -25,6 +25,20 @@ module.exports = class CustomObject {
     }
 
     /**
+     * @returns {k8s.CoreV1Api}
+     */
+    getCoreApi() {
+        return this.coreApi;
+    }
+
+    /**
+     * @returns {k8s.CustomObjectsApi}
+     */
+    getCustomObjectApi() {
+        return this.customObjectsApi;
+    }
+
+    /**
      * @returns ParamFetcher
      */
     getParamFetcher() {
@@ -67,5 +81,18 @@ module.exports = class CustomObject {
                 res({}); // no secret available
             }
         });
+    }
+
+    keyValueToNameValue(results) {
+        let taskResults = [];
+        if ( results != undefined ) {
+            Object.keys(results).forEach(key => {
+                taskResults.push({
+                    name: key,
+                    value: results[key]
+                });
+            });
+        }
+        return taskResults;
     }
 }

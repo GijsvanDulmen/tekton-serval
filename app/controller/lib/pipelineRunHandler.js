@@ -169,4 +169,75 @@ module.exports = class PipelineRunHandler extends CustomObject {
             }
         });
     }
+
+    /**
+     * @param {function} callback 
+     */
+     getRunsPerNamespace(callback, filter) {
+        this.getCoreApi().listNamespace().then(resp => {
+            if ( resp.body && resp.body.items ) {
+                resp.body.items.forEach(item => {
+                    this.getCustomObjectApi().listNamespacedCustomObject("tekton.dev", "v1alpha1", item.metadata.name, "pipelineruns").then(pipelineRuns => {
+                        if ( pipelineRuns.body && pipelineRuns.body.items ) {
+                            let servalTasks = [].concat(...pipelineRuns.body.items.map(pipelineRun => this.convertPipelineRunToTasks(pipelineRun)));
+
+                            if ( filter != undefined ) {
+                                servalTasks = servalTasks.filter(t => filter.indexOf(t.kind) != -1);
+                            }
+                            callback(servalTasks, item.metadata.name);
+                        }
+                    });
+                })
+            }
+        });
+    }
+
+    convertPipelineRunToTasks(obj) {
+        let servalTasks = [];
+
+        let runStatus;
+        if ( obj.status && obj.status.conditions ) {
+            runStatus = this.getEventFromCondition(obj.status.conditions[0]);
+        } else {
+            runStatus = 'unknown';
+        }
+
+        const addStatus = (task, name) => {
+            Object.keys(obj.status.runs).forEach(id => {
+                if ( obj.status.runs[id].pipelineTaskName == name ) {
+                    task.id = id;
+                    task.status = {};
+                    if ( obj.status.runs[id].status
+                            && obj.status.runs[id].status.conditions 
+                            && obj.status.runs[id].status.conditions[0] ) {
+                        task.status = obj.status.runs[id].status.conditions[0];
+                    }
+                }
+            });
+            return task;
+        };
+
+        obj.status.pipelineSpec.tasks.forEach(task => {
+            let generifiedTask = {
+                run: obj.metadata.name,
+                runStatus: runStatus,
+                runStart: new Date(obj.status.startTime).getTime()
+            }
+            if ( task.taskRef != undefined ) {
+                if ( task.taskRef.apiVersion == 'serval.dev/v1' ) {
+                    generifiedTask.kind = task.taskRef.kind;
+                    generifiedTask.params = this.keyValueToNameValue(task.params)
+                    servalTasks.push(addStatus(generifiedTask, task.name));
+                }
+            } else if ( task.taskSpec != undefined ) {
+                if ( task.taskSpec.apiVersion == 'serval.dev/v1' ) {
+                    generifiedTask.kind = task.taskSpec.kind;
+                    generifiedTask.params = task.taskSpec.spec;
+                    servalTasks.push(addStatus(generifiedTask, task.name));
+                }
+            }
+        });
+
+        return servalTasks;
+    }
 }

@@ -59,6 +59,11 @@ describe('CustomTaskHandler', function () {
             
         it('should generify task by spec', function () {
             const generified = cth.generifyCustomTask({
+                metadata: {
+                    labels: {
+                        "tekton.dev/pipelineRun": "runA"
+                    }
+                },
                 "spec": {
                     "serviceAccountName": "default",
                     "spec": {
@@ -69,15 +74,87 @@ describe('CustomTaskHandler', function () {
                             "waitFor": "2"
                         }
                     }
+                },
+                "status": {
+                    completionTime: '2021-06-25T10:14:01Z',
+                    conditions: [
+                      {
+                        lastTransitionTime: '2021-06-25T10:14:01Z',
+                        message: 'Successfull',
+                        reason: 'Successfull',
+                        status: 'True',
+                        type: 'Succeeded'
+                      }
+                    ],
+                    extraFields: null,
+                    startTime: '2021-06-25T10:14:01Z'
                 }
             })
             expect(generified.kind).to.eq('Wait');
             expect(generified.params[0].name).to.eq('waitFor');
             expect(generified.params[0].value).to.eq("2");
+            expect(generified.status.reason).to.eq("Successfull");
+            expect(generified.run).to.eq("runA");
+        });
+
+        it('should work without status part', function () {
+            const metadata = {
+                labels: {
+                    "tekton.dev/pipelineRun": "runA"
+                }
+            };
+            const spec = {
+                "serviceAccountName": "default",
+                "spec": {
+                    "apiVersion": "serval.dev/v1",
+                    "kind": "Wait",
+                    "metadata": {},
+                    "spec": {
+                        "waitFor": "2"
+                    }
+                }
+            };
+
+            expect(Object.keys(cth.generifyCustomTask({ metadata: metadata, spec: spec }).status).length).to.eq(0);
+            expect(Object.keys(cth.generifyCustomTask({ metadata: metadata, spec: spec, status: {} }).status).length).to.eq(0);
+            expect(Object.keys(cth.generifyCustomTask({ metadata: metadata, spec: spec, status: { conditions: [] } }).status).length).to.eq(0);
+        });
+
+        it('should throw exception on invalid data', function () {
+            const spec = {
+                "serviceAccountName": "default",
+                "spec": {
+                    "apiVersion": "serval.dev/v1",
+                    "kind": "Wait",
+                    "metadata": {},
+                    "spec": {
+                        "waitFor": 2
+                    }
+                }
+            };
+
+            try {
+                cth.generifyCustomTask({
+                    metadata: {
+                        labels: {
+                            "tekton.dev/pipelineRun": "runA"
+                        }
+                    },
+                    spec: spec
+                });
+                expect(false).to.eq(true);
+            } catch(err) {
+                expect(true).to.eq(true);
+            }
         });
 
         it('should generify task by ref', function () {
             const generified = cth.generifyCustomTask({
+                metadata: {
+                    labels: {
+                        "tekton.dev/pipelineRun": "runA"
+                    }
+                },
                 "spec": {
                     "params": [
                         {
@@ -90,11 +167,27 @@ describe('CustomTaskHandler', function () {
                         "kind": "Wait"
                     },
                     "serviceAccountName": "default"
+                },
+                "status": {
+                    completionTime: '2021-06-25T10:14:01Z',
+                    conditions: [
+                      {
+                        lastTransitionTime: '2021-06-25T10:14:01Z',
+                        message: 'Successfull',
+                        reason: 'Successfull',
+                        status: 'True',
+                        type: 'Succeeded'
+                      }
+                    ],
+                    extraFields: null,
+                    startTime: '2021-06-25T10:14:01Z'
                 }
             })
             expect(generified.kind).to.eq('Wait');
             expect(generified.params[0].name).to.eq('waitFor');
             expect(generified.params[0].value).to.eq("2");
+            expect(generified.status.reason).to.eq("Successfull");
+            expect(generified.run).to.eq("runA");
         });
     })
 
@@ -182,4 +275,6 @@ describe('CustomTaskHandler', function () {
             cth.addHandler('name', () => {}, {}, 'prefix');
         });
     });
+
+
 });

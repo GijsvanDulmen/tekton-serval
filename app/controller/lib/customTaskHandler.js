@@ -62,10 +62,7 @@ module.exports = class CustomTaskHandler extends CustomObject {
         return params;
     }
 
-    isServalCustomTaskToProcess(obj) {
-        if ( obj.status && obj.status.completionTime ) {
-            return false; // already done
-        }
+    isServalCustomTask(obj) {
         if ( obj && obj.spec ) {
             if ( obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
                 return true;
@@ -76,11 +73,27 @@ module.exports = class CustomTaskHandler extends CustomObject {
         return false;
     }
 
+    isServalCustomTaskToProcess(obj) {
+        if ( obj.status && obj.status.completionTime ) {
+            return false; // already done
+        }
+        return this.isServalCustomTask(obj);
+    }
+
     generifyCustomTask(obj) {
         if ( obj && obj.spec ) {
+            let status = {};
+            if ( obj.status
+                    && obj.status.conditions
+                    && obj.status.conditions[0] ) {
+                status = obj.status.conditions[0];
+            }
+            
             if ( obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
                 return {
                     kind: obj.spec.ref.kind,
+                    status: status,
+                    run: obj.metadata.labels["tekton.dev/pipelineRun"],
                     params: obj.spec.params == undefined ? [] : obj.spec.params
                 };
             } else if ( obj.spec.spec && obj.spec.spec.apiVersion == APIVERSION ) {
@@ -93,6 +106,8 @@ module.exports = class CustomTaskHandler extends CustomObject {
 
                 return {
                     kind: obj.spec.spec.kind,
+                    status: status,
+                    run: obj.metadata.labels["tekton.dev/pipelineRun"],
                     params: params
                 };
             }
@@ -156,6 +171,11 @@ module.exports = class CustomTaskHandler extends CustomObject {
                             params.runName = obj.metadata.name;
 
                             this.handlers[run.kind](params, this.customObjectsApi).then(results => {
+                                if ( results == false ) {
+                                    this.logger.info("not updating results for " + run.kind);
+                                    return;
+                                }
+
                                 let taskResults = this.keyValueToNameValue(results);
                                 
                                 const patch = this.getSuccessPatch(taskResults);
@@ -174,18 +194,5 @@ module.exports = class CustomTaskHandler extends CustomObject {
                 }
             }
         });
-    }
-
-    keyValueToNameValue(results) {
-        let taskResults = [];
-        if ( results != undefined ) {
-            Object.keys(results).forEach(key => {
-                taskResults.push({
-                    name: key,
-                    value: results[key]
-                });
-            });
-        }
-        return taskResults;
     }
 }

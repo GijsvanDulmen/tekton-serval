@@ -4,9 +4,6 @@ module.exports = class TaskRunMonitor extends EventEmitter {
     constructor() {
         super();
         this.taskruns = {};
-
-        this.on('created', taskRunKey => console.log(taskRunKey));
-        this.on('updated', (taskRunKey, newStatus) => console.log(taskRunKey + " = " + newStatus));
     }
 
     getReason(obj) {
@@ -31,17 +28,8 @@ module.exports = class TaskRunMonitor extends EventEmitter {
     }
 
     processPipelineRun(obj) {
-        // if ( obj.status && obj.status.runs ) {
-        //     Object.keys(obj.status.runs).forEach(taskRunKey => {
-        //         console.log(obj.spec.pipelineSpec.tasks)
-        //         console.log(obj.status);
-        //     });
-        // }
-
         if ( obj.status && obj.status.taskRuns ) {
             Object.keys(obj.status.taskRuns).forEach(taskRunKey => {
-                console.log(this.taskruns[taskRunKey]);
-
                 if ( this.taskruns[taskRunKey] == undefined ) {
                     this.taskruns[taskRunKey] = obj.status.taskRuns[taskRunKey];
                     this.emit('created', taskRunKey);

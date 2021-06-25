@@ -21,6 +21,7 @@ const authWatcher = new AuthorizationWatcher(kc, logger);
 
 require('./handlers/microsoft-teams')(handlers, runHandlers, logger);
 require('./handlers/wait')(handlers, runHandlers, logger);
+require('./handlers/lock/lock')(handlers, runHandlers, logger);
 
 // slack
 if ( process.env.SLACK_APP_TOKEN !== undefined

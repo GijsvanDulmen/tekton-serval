@@ -1,0 +1,56 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+  annotations:
+    serval.dev/slack-channel: "#serval"
+spec:
+  # timeout: "0h0m10s"
+  pipelineSpec:
+    tasks:
+    - name: slack-try-lock
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackNotification
+      params:
+      - name: message
+        value: ":lock: Trying to lock for $(context.pipeline.name)"
+    - name: lock
+      runAfter: ['slack-try-lock']
+      taskSpec:
+        apiVersion: serval.dev/v1
+        kind: Lock
+        spec:
+          name: lockA
+    - name: slack-lock-free
+      runAfter: ['lock']
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackNotification
+      params:
+      - name: message
+        value: ":lock: Doing something really slow for $(context.pipeline.name)"
+    - name: wait
+      runAfter: ['lock']
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: Wait
+      params:
+      - name: waitFor
+        value: "10"
+    - name: unlock
+      runAfter: ['wait']
+      taskSpec:
+        apiVersion: serval.dev/v1
+        kind: Unlock
+        spec:
+          name: lockA
+    - name: slack-unlock-free
+      runAfter: ['unlock']
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackNotification
+      params:
+      - name: message
+        value: ":lock: Unlocked for $(context.pipeline.name)"
