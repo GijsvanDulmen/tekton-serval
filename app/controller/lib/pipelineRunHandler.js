@@ -98,6 +98,7 @@ module.exports = class PipelineRunHandler extends CustomObject {
     }
 
     getCheckRun(obj) {
+
         return this.getAnnotationSplitted(obj, 'serval.dev/check-run');
     }
 
@@ -217,27 +218,28 @@ module.exports = class PipelineRunHandler extends CustomObject {
             return task;
         };
 
-        obj.status.pipelineSpec.tasks.forEach(task => {
-            let generifiedTask = {
-                run: obj.metadata.name,
-                runStatus: runStatus,
-                runStart: new Date(obj.status.startTime).getTime()
-            }
-            if ( task.taskRef != undefined ) {
-                if ( this.isServalApiVersion(task.taskRef.apiVersion) ) {
-                    generifiedTask.kind = task.taskRef.kind;
-                    generifiedTask.params = this.keyValueToNameValue(task.params)
-                    servalTasks.push(addStatus(generifiedTask, task.name));
+        if ( obj.status.pipelineSpec && obj.status.pipelineSpec.tasks ) {
+            obj.status.pipelineSpec.tasks.forEach(task => {
+                let generifiedTask = {
+                    run: obj.metadata.name,
+                    runStatus: runStatus,
+                    runStart: new Date(obj.status.startTime).getTime()
                 }
-            } else if ( task.taskSpec != undefined ) {
-                if ( this.isServalApiVersion(task.taskSpec.apiVersion) ) {
-                    generifiedTask.kind = task.taskSpec.kind;
-                    generifiedTask.params = task.taskSpec.spec;
-                    servalTasks.push(addStatus(generifiedTask, task.name));
+                if ( task.taskRef != undefined ) {
+                    if ( this.isServalApiVersion(task.taskRef.apiVersion) ) {
+                        generifiedTask.kind = task.taskRef.kind;
+                        generifiedTask.params = this.keyValueToNameValue(task.params)
+                        servalTasks.push(addStatus(generifiedTask, task.name));
+                    }
+                } else if ( task.taskSpec != undefined ) {
+                    if ( this.isServalApiVersion(task.taskSpec.apiVersion) ) {
+                        generifiedTask.kind = task.taskSpec.kind;
+                        generifiedTask.params = task.taskSpec.spec;
+                        servalTasks.push(addStatus(generifiedTask, task.name));
+                    }
                 }
-            }
-        });
-
+            });
+        }
         return servalTasks;
     }
 }

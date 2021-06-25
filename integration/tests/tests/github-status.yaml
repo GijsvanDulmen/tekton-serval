@@ -18,7 +18,7 @@ spec:
         kind: GithubStatus
       params:
       - name: commit
-        value: "f4c079efc7d4ad9686d1a06e4d01b3afe84ede33"
+        value: f4c079efc7d4ad9686d1a06e4d01b3afe84ede33
       - name: status
         value: pending
       - name: url
