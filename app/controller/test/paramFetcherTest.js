@@ -92,6 +92,30 @@ describe('ParamFetcher', function () {
         });
     });
 
+    describe('getFromPipelineRunParameters', function () {
+        it('should work normally', function () {
+            const pf = new ParamFetcher();
+            const spec = {
+                sources: ['pipelinerun'],
+                name: 'channel'
+            };
+            const results = pf.getFromPipelineRunParameters("slack", spec, {}, {
+                params: [ { name: 'serval-dev-slack-channel', value: '#serval' } ]
+            })
+            expect(results.channel).to.eq("#serval");
+        });
+
+        it('should work without params', function () {
+            const pf = new ParamFetcher();
+            const spec = {
+                sources: ['pipelinerun'],
+                name: 'channel'
+            };
+            const results = pf.getFromPipelineRunParameters("slack", spec, {}, { })
+            expect(results.channel).to.eq(undefined);
+        });
+    });
+
     describe('getParam', function () {
         it('should create defaults', function () {
             const pf = new ParamFetcher();
@@ -100,7 +124,7 @@ describe('ParamFetcher', function () {
                 name: 'channel',
                 default: 'abc'
             };
-            const results = pf.getParam('slack', spec, {}, {}, {});
+            const results = pf.getParam('slack', spec, {}, {}, {}, {});
             expect(results.channel).to.eq("abc");
         });
 
@@ -114,7 +138,7 @@ describe('ParamFetcher', function () {
                 sources: ['env', 'namespace-secret'],
                 name: 'channel'
             };
-            const results = pf.getParam('slack', spec, {}, secret, {});
+            const results = pf.getParam('slack', spec, {}, secret, {}, {});
             expect(results.channel).to.eq("#tekton-dev");
         });
 
@@ -130,8 +154,23 @@ describe('ParamFetcher', function () {
                 sources: ['env', 'namespace-secret', 'pipelinerun'],
                 name: 'channel'
             };
-            const results = pf.getParam('slack', spec, {}, secret, { annotations: annotations });
+            const results = pf.getParam('slack', spec, {}, secret, { annotations: annotations }, {});
             expect(results.channel).to.eq("#tekton-dev2");
+        });
+
+        it('should prefer pipeline params above annotations', function () {
+            const pf = new ParamFetcher();
+            const annotations = {
+                'serval.dev/slack-channel': "#tekton-dev2"
+            };
+            const spec = {
+                sources: ['env', 'namespace-secret', 'pipelinerun'],
+                name: 'channel'
+            };
+            const results = pf.getParam('slack', spec, {}, {}, { annotations: annotations }, {
+                params: [ { name: 'serval-dev-slack-channel', value: '#serval' } ] 
+            });
+            expect(results.channel).to.eq("#serval");
         });
     });
 });

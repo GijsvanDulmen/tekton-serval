@@ -1,9 +1,20 @@
- apiVersion: tekton.dev/v1beta1
- kind: PipelineRun
- metadata:
-   generateName: serval-build-
-   namespace: pipelines
- spec:
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-build-
+  namespace: pipelines
+  annotations:
+    # add checkruns!
+    serval.dev/github-checkrun-owner: "GijsvanDulmen"
+    serval.dev/github-checkrun-repository: "tekton-serval"
+    serval.dev/github-checkrun-installation-id: "17456888"
+    serval.dev/github-checkrun-url: "https://github.com/GijsvanDulmen/tekton-serval/$name"
+    serval.dev/github-checkrun-commit: 'dafadee5c88f5dea455b6947858789a88ecfa038'
+
+    # create a checkrun for each of those tasks
+    serval.dev/check-run-tasks: 'fetch-repo,install-dependencies,run-test,run-lint,build-container'
+    serval.dev/check-run: 'github-checkrun'
+spec:
   serviceAccountName: build-bot
   workspaces:
     - name: shared-workspace
@@ -19,88 +30,88 @@
         secretName: serval-dockerconfig
   pipelineSpec:
     params:
-    - name: repo-url
-      type: string
-      default: 'https://github.com/GijsvanDulmen/tekton-serval.git'
-    - name: branch-name
-      type: string
-      default: main
-    - name: image
-      type: string
-      default: ghcr.io/gijsvandulmen/serval:latest
+      - name: repo-url
+        type: string
+        default: "https://github.com/GijsvanDulmen/tekton-serval.git"
+      - name: branch-name
+        type: string
+        default: main
+      - name: image
+        type: string
+        default: ghcr.io/gijsvandulmen/serval:latest
     workspaces:
-    - name: shared-workspace
-    - name: dockerconfig
-    tasks:
-    - name: fetch-repo
-      taskRef:
-        name: git-clone
-      workspaces:
-      - name: output
-        workspace: shared-workspace
-      params:
-      - name: url
-        value: $(params.repo-url)
-      - name: revision
-        value: $(params.branch-name)
-    - name: install-dependencies
-      taskRef:
-        name: npm
-      runAfter:
-        - fetch-repo
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-      params:
-        - name: PATH_CONTEXT
-          value: "app/controller"
-        - name: ARGS
-          value:
-            - install
-    - name: run-test
-      taskRef:
-        name: npm
-      runAfter:
-        - install-dependencies
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-      params:
-        - name: PATH_CONTEXT
-          value: "app/controller/test"
-        - name: ARGS
-          value:
-            - test 
-    - name: run-lint
-      taskRef:
-        name: npm
-      runAfter:
-        - install-dependencies
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-      params:
-        - name: PATH_CONTEXT
-          value: "app/controller/"
-        - name: ARGS
-          value:
-            - run
-            - lint
-    - name: build-container
-      taskRef:
-        name: kaniko
-      workspaces:
-      - name: source
-        workspace: shared-workspace
+      - name: shared-workspace
       - name: dockerconfig
-        workspace: dockerconfig
-      runAfter:
-      - run-test
-      - run-lint
-      params:
-        - name: DOCKERFILE
-          value: ./app/controller/Dockerfile
-        - name: CONTEXT
-          value: ./app/controller/
-        - name: IMAGE
-          value: "ghcr.io/gijsvandulmen/serval:latest"
+    tasks:
+      - name: fetch-repo
+        taskRef:
+          name: git-clone
+        workspaces:
+          - name: output
+            workspace: shared-workspace
+        params:
+          - name: url
+            value: $(params.repo-url)
+          - name: revision
+            value: $(params.branch-name)
+      - name: install-dependencies
+        taskRef:
+          name: npm
+        runAfter:
+          - fetch-repo
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+        params:
+          - name: PATH_CONTEXT
+            value: "app/controller"
+          - name: ARGS
+            value:
+              - install
+      - name: run-test
+        taskRef:
+          name: npm
+        runAfter:
+          - install-dependencies
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+        params:
+          - name: PATH_CONTEXT
+            value: "app/controller/test"
+          - name: ARGS
+            value:
+              - test
+      - name: run-lint
+        taskRef:
+          name: npm
+        runAfter:
+          - install-dependencies
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+        params:
+          - name: PATH_CONTEXT
+            value: "app/controller/"
+          - name: ARGS
+            value:
+              - run
+              - lint
+      # - name: build-container
+      #   taskRef:
+      #     name: kaniko
+      #   workspaces:
+      #     - name: source
+      #       workspace: shared-workspace
+      #     - name: dockerconfig
+      #       workspace: dockerconfig
+      #   runAfter:
+      #     - run-test
+      #     - run-lint
+      #   params:
+      #     - name: DOCKERFILE
+      #       value: ./app/controller/Dockerfile
+      #     - name: CONTEXT
+      #       value: ./app/controller/
+      #     - name: IMAGE
+      #       value: "ghcr.io/gijsvandulmen/serval-private:latest"

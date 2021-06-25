@@ -1,4 +1,6 @@
+const checkrun = require('../handlers/github/checkrun');
 const CustomObject = require('./customObject');
+const TaskRunMonitor = require('./taskRunMonitor');
 
 module.exports = class PipelineRunHandler extends CustomObject {
     constructor(kc, logger) {
@@ -8,8 +10,11 @@ module.exports = class PipelineRunHandler extends CustomObject {
             started: [],
             succeeded: [],
             failed: [],
-            cancelled: []
+            cancelled: [],
+            checkrun: []
         };
+
+        this.taskRunMonitor = new TaskRunMonitor();
     }
 
     addStarted(on, handler, params) {
@@ -28,11 +33,35 @@ module.exports = class PipelineRunHandler extends CustomObject {
         this.events.cancelled.push({ on: on, handler: handler, params: params });
     }
 
+    addCheckRun(on, handler, params) {
+        this.events.checkrun.push({ on: on, handler: handler, params: params });
+    }
+
     start() {
+        this.taskRunMonitor.on('updated', (taskRunKey, newStatus, taskRun, obj) => {
+            try {
+                const checkRunTasks = this.getCheckRunTasks(obj);
+                const checkRuns = this.getCheckRun(obj);
+
+                if ( checkRunTasks.indexOf(taskRun.pipelineTaskName) != -1 ) {
+                    this.events.checkrun.forEach(handler => {
+                        if ( checkRuns.indexOf(handler.on) != -1 ) {
+                            this.processHandler(handler, obj, newStatus, taskRun.pipelineTaskName, taskRun);
+                        }
+                    });
+                }
+            } catch(err) {
+                this.logger.error("got error");
+                this.logger.error(err);
+            }            
+        });
+
         this.watch("/apis/tekton.dev/v1alpha1/pipelineruns", (phase, obj) => {
             if ( phase == 'ADDED' ) {
                 return;
             }
+
+            this.taskRunMonitor.processPipelineRun(obj);
 
             this.processForEachEvent(obj, (handler, obj) => {
                 this.processHandler(handler, obj);
@@ -65,15 +94,27 @@ module.exports = class PipelineRunHandler extends CustomObject {
     }
 
     getMonitors(obj) {
-        let monitorRun = [];
+        return this.getAnnotationSplitted(obj, 'serval.dev/monitor-run');
+    }
+
+    getCheckRun(obj) {
+        return this.getAnnotationSplitted(obj, 'serval.dev/check-run');
+    }
+
+    getCheckRunTasks(obj) {
+        return this.getAnnotationSplitted(obj, 'serval.dev/check-run-tasks');
+    }
+
+    getAnnotationSplitted(obj, annotation) {
+        let splitted = [];
         if ( obj.metadata && obj.metadata.annotations ) {
             Object.keys(obj.metadata.annotations).forEach(key => {
-                if ( key == 'serval.dev/monitor-run' ) {
-                    monitorRun = obj.metadata.annotations[key].split(",").filter(v => v != '');
+                if ( key == annotation ) {
+                    splitted = obj.metadata.annotations[key].split(",").filter(v => v != '');
                 }
             });
         }
-        return monitorRun;
+        return splitted;
     }
 
     getEventFromCondition(condition) {
@@ -99,7 +140,7 @@ module.exports = class PipelineRunHandler extends CustomObject {
         return false;
     }
 
-    processHandler(handler, obj) {
+    processHandler(handler, obj, ...otherParams) {
         let params = {};
         
         // check if there are secrets needed
@@ -109,7 +150,7 @@ module.exports = class PipelineRunHandler extends CustomObject {
                     paramSpec.sources = ['pipelinerun'];
                 }
 
-                params = this.getParamFetcher().getParam(handler.on, paramSpec, params, secret, obj.metadata);
+                params = this.getParamFetcher().getParam(handler.on, paramSpec, params, secret, obj.metadata, obj.spec);
 
                 if ( params[paramSpec.name] != undefined && paramSpec.replace ) {
                     params[paramSpec.name] = params[paramSpec.name].replace("$name", obj.metadata.name);
@@ -122,7 +163,7 @@ module.exports = class PipelineRunHandler extends CustomObject {
                 params.runNamespace = obj.metadata.namespace;
                 params.runName = obj.metadata.name;
 
-                handler.handler(params);
+                handler.handler(params, ...otherParams);
             } else {
                 this.logger.error("params missing for run in %s name %s for %s", obj.metadata.namespace, obj.metadata.name, handler.on);
             }

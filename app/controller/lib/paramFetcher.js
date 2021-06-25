@@ -29,6 +29,19 @@ module.exports = class ParamFetcher {
         return params;
     }
 
+    getFromPipelineRunParameters(prefix, paramSpec, params, spec) {
+        if ( paramSpec.sources.indexOf('pipelinerun') != -1 ) {
+            if ( spec && spec.params ) {
+                spec.params.forEach(param => {
+                    if ( param.name == 'serval-dev-'+prefix+"-"+paramSpec.name ) {
+                        params[paramSpec.name] = param.value;
+                    }
+                })
+            }
+        }
+        return params;
+    }
+
     getFromSecret(prefix, paramSpec, params, secret) {
         if ( paramSpec.sources.indexOf('namespace-secret') != -1 ) {
             Object.keys(secret).forEach(key => {
@@ -40,7 +53,7 @@ module.exports = class ParamFetcher {
         return params;
     }
 
-    getParam(prefix, paramSpec, params, secret, metadata) {
+    getParam(prefix, paramSpec, params, secret, metadata, spec) {
         if ( paramSpec.default != undefined ) {
             params[paramSpec.name] = paramSpec.default;
         }
@@ -53,6 +66,9 @@ module.exports = class ParamFetcher {
         
         // check if there is an annotation
         params = this.getFromAnnotations(prefix, paramSpec, params, metadata);
+
+        // check if there is an annotation
+        params = this.getFromPipelineRunParameters(prefix, paramSpec, params, spec);
 
         return params;
     }

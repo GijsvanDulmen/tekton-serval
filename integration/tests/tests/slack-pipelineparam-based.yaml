@@ -1,0 +1,20 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+spec:
+  timeout: "0h0m10s"
+  params:
+    # use this naming convention!
+    - name: serval-dev-slack-channel
+      value: "#serval"
+  pipelineSpec:
+    tasks:
+    - name: slack-notification
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackNotification
+      params:
+      - name: message
+        value: ":ok_hand: Serval - TaskParam"

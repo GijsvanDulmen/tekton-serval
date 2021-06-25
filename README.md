@@ -25,6 +25,7 @@ Serval provides several ways of interacting with Slack:
 - [Create Deployment](./integration/tests/tests/github-deployments.yaml)
 - [Update Deployment Status](./integration/tests/tests/github-status.yaml)
 - [Create/Update Checkrun](./integration/tests/tests/github-checkrun.yaml)
+- [Checkrun Synchronizer](./pipelines/build.yaml)
 
 Checkout the `integration/tests/tests` directory for some examples on how to configure those tasks.
 
@@ -57,7 +58,7 @@ Or like this (this doesn't support variable substition):
           value: ":ok_hand: Hi!"
 ```
 
-You can also upgrade to PipelineRun parameters which will be used within all tasks in the pipeline run:
+You can also upgrade to PipelineRun annotations which will be used within all tasks in the pipeline run:
 ```yaml
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
@@ -67,8 +68,29 @@ metadata:
   annotations:
     serval.dev/slack-channel: "#serval"
 spec:
-  timeout: "0h0m10s"
   pipelineSpec:
+    tasks:
+    - name: slack-notification
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackNotification
+      params:
+      - name: message
+        value: ":ok_hand: Hi!"
+```
+
+Or use PipelineRun params which will also be used for all tasks within the run:
+```yaml
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval
+  namespace: pipelines
+spec:
+  pipelineSpec:
+    params:
+      - name: serval-dev-slack-channel
+        value: "#serval"
     tasks:
     - name: slack-notification
       taskRef:

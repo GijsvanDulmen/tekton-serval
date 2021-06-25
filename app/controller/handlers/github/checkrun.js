@@ -116,4 +116,52 @@ module.exports = (handlers, runHandlers, logger, app) => {
         [ ...updateParams ],
         prefix
     );
+
+    runHandlers.addCheckRun('github-checkrun', (params, newStatus, pipelineTaskName, taskRun) => {
+        if ( newStatus == 'unknown' ) {
+            return;
+        }
+
+        let json = {
+            name: pipelineTaskName,
+            head_sha: params.commit,
+
+            external_id: params.runName,
+            
+            output: {
+                title: '',
+                summary: ''
+            }
+        };
+
+        if ( newStatus == 'running' ) {
+            json.status = 'in_progress'; // complete
+            json.started_at = new Date().toISOString();
+        } else {
+            json.status = 'completed';
+            json.completed_at = new Date().toISOString();
+
+            if ( newStatus == 'cancelled' ) {
+                json.conclusion = 'cancelled';
+            } else if ( newStatus == 'failed' ) {
+                json.conclusion = 'failure';
+            } else if ( newStatus == 'succeeded' ) {
+                json.conclusion = 'success';
+            }
+        }
+
+        if ( params.url != '' ) { json.details_url = params.url; }
+
+        logger.info("creating github checkrun on %s for %s in ns %s", params.commit, params.runName, params.runNamespace);
+
+        return app.postForInstallation(params, "check-runs", json, resp => {
+            return {
+                id: new String(resp.id)
+            };
+        });
+    }, [
+        ...app.getAppParams(),
+        { name: 'commit' },
+        { name: 'url', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], replace: true, default: '' }
+    ])
 };

@@ -127,7 +127,7 @@ module.exports = class CustomTaskHandler extends CustomObject {
                                     paramSpec.sources = ['pipelinerun', 'taskparam'];
                                 }
                             
-                                params = this.getParamFetcher().getParam(prefix, paramSpec, params, secret, obj.metadata);
+                                params = this.getParamFetcher().getParam(prefix, paramSpec, params, secret, obj.metadata, obj.spec);
                                 
                                 // explicit task params
                                 params = this.getFromTaskSpec(paramSpec, params, run);
