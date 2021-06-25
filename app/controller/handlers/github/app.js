@@ -84,9 +84,9 @@ module.exports = class GithubApp {
 
     getAppParams() {
         return [
-            { name: 'repository', sources: ['namespace-secret', 'pipelinerun', 'taskparam'] },
-            { name: 'owner', sources: ['namespace-secret', 'pipelinerun', 'taskparam'] },
-            { name: 'installation-id', sources: ['namespace-secret', 'pipelinerun', 'taskparam'] },
+            { name: 'repository', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], extraPrefixes: ['github'] },
+            { name: 'owner', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], extraPrefixes: ['github'] },
+            { name: 'installation-id', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], extraPrefixes: ['github'] },
         ];
     }
 }

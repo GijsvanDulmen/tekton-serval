@@ -4,11 +4,12 @@ metadata:
   generateName: serval-run-
   namespace: pipelines
   annotations:
-    serval.dev/github-status-owner: "GijsvanDulmen"
-    serval.dev/github-status-repository: "tekton-serval"
-    serval.dev/github-status-installation-id: "17456888"
+    serval.dev/github-owner: "GijsvanDulmen"
+    serval.dev/github-repository: "tekton-serval"
+    serval.dev/github-installation-id: "17456888"
+    serval.dev/github-commit: "f97b23271cd97aceb73e0155065b64b4eabb04f3"
+
     serval.dev/github-status-context: "cicd/serval"
-    serval.dev/github-status-commit: "c3ea26031a62cc6a0080758bed267a5648b7c26c"
     serval.dev/github-status-url: "https://github.com/GijsvanDulmen/tekton-serval"
     serval.dev/monitor-run: 'github-status'
 spec:

@@ -17,6 +17,8 @@ const SlackApi = require('./slack/slackApi');
  */
 module.exports = (handlers, runHandlers, logger, authWatcher, slackSocket, slackApi) => {
 
+    const prefix = 'slack';
+
     // https://api.slack.com/docs/rate-limits#rate-limits__limits-when-posting-messages
     // set the min time this way to allow for reduced stress on the api
     const limiter = new Bottleneck({
@@ -43,8 +45,6 @@ module.exports = (handlers, runHandlers, logger, authWatcher, slackSocket, slack
         { name: 'token', sources: ['env', 'namespace-secret'] },
         { name: 'channel', sources: ['env', 'namespace-secret', 'pipelinerun', 'taskparam'] }
     ];
-
-    const prefix = 'slack';
 
     runHandlers.addStarted(prefix,
         params => send(params, params.runStarted),

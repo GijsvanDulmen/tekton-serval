@@ -40,6 +40,33 @@ describe('ParamFetcher', function () {
             expect(results.channel).to.eq("#tekton-dev");
         });
 
+        it('should work normally with extra prefixes prefer prefix', function () {
+            const pf = new ParamFetcher();
+            const annotations = {
+                'serval.dev/github-installation-id': "123",
+                'serval.dev/github-pullrequest-installation-id': "456"
+            };
+            const spec = {
+                sources: ['pipelinerun'],
+                name: 'installation-id'
+            };
+            const results = pf.getFromAnnotations("github-pullrequest", spec, {}, { annotations: annotations }, ['github']);
+            expect(results['installation-id']).to.eq("456");
+        });
+
+        it('should work normally with extra prefixes use extra prefix', function () {
+            const pf = new ParamFetcher();
+            const annotations = {
+                'serval.dev/github-installation-id': "123"
+            };
+            const spec = {
+                sources: ['pipelinerun'],
+                name: 'installation-id'
+            };
+            const results = pf.getFromAnnotations("github-pullrequest", spec, {}, { annotations: annotations }, ['github']);
+            expect(results['installation-id']).to.eq("123");
+        });
+
         it('should work normally when there are no annotations', function () {
             const pf = new ParamFetcher();
             const spec = {
@@ -90,6 +117,33 @@ describe('ParamFetcher', function () {
             const results = pf.getFromSecret("slack", spec, {}, secret)
             expect(results.channel).to.eq(undefined);
         });
+
+        it('should work for extra prefixes prefer original prefix', function () {
+            const pf = new ParamFetcher();
+            const secret = {
+                'github-installation-id': "123",
+                'github-pullrequest-installation-id': "456"
+            };
+            const spec = {
+                sources: ['namespace-secret'],
+                name: 'installation-id'
+            };
+            const results = pf.getFromSecret("github-pullrequest", spec, {}, secret, ['github'])
+            expect(results['installation-id']).to.eq("456");
+        });
+
+        it('should work for extra prefixes', function () {
+            const pf = new ParamFetcher();
+            const secret = {
+                'github-installation-id': "123"
+            };
+            const spec = {
+                sources: ['namespace-secret'],
+                name: 'installation-id'
+            };
+            const results = pf.getFromSecret("github-pullrequest", spec, {}, secret, ['github'])
+            expect(results['installation-id']).to.eq("123");
+        });
     });
 
     describe('getFromPipelineRunParameters', function () {
@@ -113,6 +167,18 @@ describe('ParamFetcher', function () {
             };
             const results = pf.getFromPipelineRunParameters("slack", spec, {}, { })
             expect(results.channel).to.eq(undefined);
+        });
+
+        it('should work with prefixes', function () {
+            const pf = new ParamFetcher();
+            const spec = {
+                sources: ['pipelinerun'],
+                name: 'channel'
+            };
+            const results = pf.getFromPipelineRunParameters("slack", spec, {}, {
+                params: [ { name: 'serval-dev-slack-extra-channel', value: '#serval' } ]
+            }, ['slack-extra']);
+            expect(results.channel).to.eq("#serval");
         });
     });
 

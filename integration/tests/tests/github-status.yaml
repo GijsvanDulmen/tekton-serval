@@ -4,10 +4,11 @@ metadata:
   generateName: serval-run-
   namespace: pipelines
   annotations:
-    serval.dev/github-status-owner: "GijsvanDulmen"
-    serval.dev/github-status-repository: "tekton-serval"
-    serval.dev/github-status-installation-id: "17456888"
-    serval.dev/github-status-context: "cicd/serval"
+    serval.dev/github-owner: "GijsvanDulmen"
+    serval.dev/github-repository: "tekton-serval"
+    serval.dev/github-installation-id: "17456888"
+
+    serval.dev/github-status-context: "cicd/status/serval"
 spec:
   timeout: "0h0m20s"
   pipelineSpec:
@@ -18,7 +19,7 @@ spec:
         kind: GithubStatus
       params:
       - name: commit
-        value: f4c079efc7d4ad9686d1a06e4d01b3afe84ede33
+        value: f97b23271cd97aceb73e0155065b64b4eabb04f3
       - name: status
         value: pending
       - name: url

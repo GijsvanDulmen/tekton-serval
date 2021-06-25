@@ -62,7 +62,7 @@ module.exports = (handlers, runHandlers, logger, app) => {
     const createParams = [
         ...app.getAppParams(),
         ...defaultParams,
-        { name: 'commit' },
+        { name: 'commit', extraPrefixes: ['github'] },
     ];
 
     const updateParams = [
@@ -161,7 +161,7 @@ module.exports = (handlers, runHandlers, logger, app) => {
         });
     }, [
         ...app.getAppParams(),
-        { name: 'commit' },
+        { name: 'commit', extraPrefixes: ['github'] },
         { name: 'url', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], replace: true, default: '' }
     ])
 };

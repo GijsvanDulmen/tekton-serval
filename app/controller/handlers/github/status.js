@@ -24,7 +24,7 @@ module.exports = (handlers, runHandlers, logger, app) => {
     const defaultParams = [
         ...app.getAppParams(),
         
-        { name: 'commit' },
+        { name: 'commit', extraPrefixes: ['github'] },
         { name: 'url', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], replace: true, default: '' },
         { name: 'description', replace: true, default: '' },
         { name: 'context', sources: ['namespace-secret', 'pipelinerun', 'taskparam'], default: 'serval' },

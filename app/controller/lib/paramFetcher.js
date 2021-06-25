@@ -16,39 +16,61 @@ module.exports = class ParamFetcher {
         return params;
     }
 
-    getFromAnnotations(prefix, paramSpec, params, metadata) {
+    getFromAnnotations(prefix, paramSpec, params, metadata, extraPrefixes) {
         if ( paramSpec.sources.indexOf('pipelinerun') != -1 ) {
             if ( metadata.annotations ) {
-                Object.keys(metadata.annotations).forEach(key => {
-                    if ( key == 'serval.dev/'+prefix+"-"+paramSpec.name ) {
-                        params[paramSpec.name] = metadata.annotations[key];
-                    }
-                });
+                const doForPrefix = usePrefix => {
+                    Object.keys(metadata.annotations).forEach(key => {
+                        if ( key == 'serval.dev/'+usePrefix+"-"+paramSpec.name ) {
+                            params[paramSpec.name] = metadata.annotations[key];
+                        }
+                    });
+                };
+
+
+                if ( extraPrefixes != undefined ) {
+                    extraPrefixes.forEach(extraPrefix => doForPrefix(extraPrefix));
+                }
+                doForPrefix(prefix);
             }
         }
         return params;
     }
 
-    getFromPipelineRunParameters(prefix, paramSpec, params, spec) {
+    getFromPipelineRunParameters(prefix, paramSpec, params, spec, extraPrefixes) {
         if ( paramSpec.sources.indexOf('pipelinerun') != -1 ) {
             if ( spec && spec.params ) {
-                spec.params.forEach(param => {
-                    if ( param.name == 'serval-dev-'+prefix+"-"+paramSpec.name ) {
-                        params[paramSpec.name] = param.value;
-                    }
-                })
+                const doForPrefix = usePrefix => {
+                    spec.params.forEach(param => {
+                        if ( param.name == 'serval-dev-'+usePrefix+"-"+paramSpec.name ) {
+                            params[paramSpec.name] = param.value;
+                        }
+                    })
+                };
+    
+                if ( extraPrefixes != undefined ) {
+                    extraPrefixes.forEach(extraPrefix => doForPrefix(extraPrefix));
+                }
+                doForPrefix(prefix);
             }
         }
         return params;
     }
 
-    getFromSecret(prefix, paramSpec, params, secret) {
+    getFromSecret(prefix, paramSpec, params, secret, extraPrefixes) {
         if ( paramSpec.sources.indexOf('namespace-secret') != -1 ) {
-            Object.keys(secret).forEach(key => {
-                if ( key == prefix+"-"+paramSpec.name ) {
-                    params[paramSpec.name] = secret[key];
-                }
-            });
+            const doForPrefix = usePrefix => {
+                Object.keys(secret).forEach(key => {
+                    if ( key == usePrefix+"-"+paramSpec.name ) {
+                        params[paramSpec.name] = secret[key];
+                    }
+                });
+            };
+
+            if ( extraPrefixes != undefined ) {
+                extraPrefixes.forEach(extraPrefix => doForPrefix(extraPrefix));
+            }
+            doForPrefix(prefix);
         }
         return params;
     }
@@ -62,13 +84,13 @@ module.exports = class ParamFetcher {
         params = this.getFromEnvironment(prefix, paramSpec, params);
 
         // get from environment
-        params = this.getFromSecret(prefix, paramSpec, params, secret);
+        params = this.getFromSecret(prefix, paramSpec, params, secret, paramSpec.extraPrefixes);
         
         // check if there is an annotation
-        params = this.getFromAnnotations(prefix, paramSpec, params, metadata);
+        params = this.getFromAnnotations(prefix, paramSpec, params, metadata, paramSpec.extraPrefixes);
 
         // check if there is an annotation
-        params = this.getFromPipelineRunParameters(prefix, paramSpec, params, spec);
+        params = this.getFromPipelineRunParameters(prefix, paramSpec, params, spec, paramSpec.extraPrefixes);
 
         return params;
     }
