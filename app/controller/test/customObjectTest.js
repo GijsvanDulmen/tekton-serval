@@ -77,6 +77,47 @@ describe('CustomTaskHandler', function () {
         });
     });
 
+    describe('replaceCommonVars', function () {
+        it('should replace for pipelinerun', function () {
+            const co = new CustomObject(kc, logger);
+
+            const pr = {
+                kind: 'PipelineRun',
+                metadata: {
+                    name: 'pr1',
+                    namespace: 'ns1'
+                }
+            };
+
+            expect(co.replaceCommonVars(pr, '$name')).to.eq('pr1');
+            expect(co.replaceCommonVars(pr, '$namespace')).to.eq('ns1');
+
+            expect(co.replaceCommonVars(pr, '$pipeline')).to.eq('$pipeline');
+        });
+
+        it('should replace for run', function () {
+            const co = new CustomObject(kc, logger);
+
+            const run = {
+                kind: 'Run',
+                metadata: {
+                    name: 'pr1',
+                    namespace: 'ns1',
+                    labels: {
+                        'tekton.dev/pipeline': 'p1',
+                        'tekton.dev/pipelineRun': 'serval-run-k8mtg',
+                        'tekton.dev/pipelineTask': 'slack-notification'
+                    },
+                }
+            };
+
+            expect(co.replaceCommonVars(run, '$name')).to.eq('serval-run-k8mtg');
+            expect(co.replaceCommonVars(run, '$namespace')).to.eq('ns1');
+            expect(co.replaceCommonVars(run, '$pipeline')).to.eq('p1');
+            expect(co.replaceCommonVars(run, '$task')).to.eq('slack-notification');
+        });
+    });
+
     describe('patchCustomTaskResource', function () {
         it('should patch custom task resource', function (done) {
             const co = new CustomObject(kc, logger);

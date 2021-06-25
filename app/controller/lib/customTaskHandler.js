@@ -146,7 +146,7 @@ module.exports = class CustomTaskHandler extends CustomObject {
                                 params = this.getFromTaskSpec(paramSpec, params, run);
 
                                 if ( params[paramSpec.name] != undefined && paramSpec.replace ) {
-                                    params[paramSpec.name] = params[paramSpec.name].replace("$name", obj.metadata.labels["tekton.dev/pipelineRun"]);
+                                    params[paramSpec.name] = this.replaceCommonVars(obj, params[paramSpec.name]);
                                 }
                             });
 

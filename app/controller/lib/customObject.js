@@ -24,6 +24,18 @@ module.exports = class CustomObject {
         start();
     }
 
+    replaceCommonVars(obj, string) {
+        string = string.replace('$namespace', obj.metadata.namespace);
+        if ( obj.kind == 'PipelineRun' ) {
+            string = string.replace('$name', obj.metadata.name);
+        } else if ( obj.kind == 'Run' ) {
+            string = string.replace('$name', obj.metadata.labels["tekton.dev/pipelineRun"]);
+            string = string.replace('$pipeline', obj.metadata.labels["tekton.dev/pipeline"]);
+            string = string.replace('$task', obj.metadata.labels["tekton.dev/pipelineTask"]);
+        }
+        return string;
+    }
+
     isServalApiVersion(version) {
         return version == "serval.dev/v1";
     }

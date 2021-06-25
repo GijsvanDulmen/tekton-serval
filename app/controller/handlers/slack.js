@@ -89,7 +89,7 @@ module.exports = (handlers, runHandlers, logger, authWatcher, slackSocket, slack
 
     handlers.addHandler('SlackWrite', 
         params => sendByApi(params, params.message),
-        [ ...defaultParamsToken, { name: 'message' }],
+        [ ...defaultParamsToken, { name: 'message', replace: true }],
         prefix
     );
 
@@ -131,7 +131,7 @@ module.exports = (handlers, runHandlers, logger, authWatcher, slackSocket, slack
 
     handlers.addHandler('SlackApprove', 
         params => approveByApi(params, params.message),
-        [ ...defaultParamsToken, { name: 'message' }, { name: 'timeout' }],
+        [ ...defaultParamsToken, { name: 'message', replace: true }, { name: 'timeout' }],
         prefix
     );
 };

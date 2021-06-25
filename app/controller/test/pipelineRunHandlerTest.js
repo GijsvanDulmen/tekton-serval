@@ -250,6 +250,16 @@ describe('PipelineRunHandler', function () {
                                     }
                                 ]
                             }
+                        },
+                        'abc2': {
+                            pipelineTaskName: 'taskname2',
+                            status: {
+                                conditions: [
+                                    {
+                                        status: "status"
+                                    }
+                                ]
+                            }
                         }
                     },
                     pipelineSpec: {
@@ -292,7 +302,7 @@ describe('PipelineRunHandler', function () {
             expect(results[1].runStatus).to.eq('started');
             expect(results[1].runStart).to.eq(now.getTime());
             expect(results[1].kind).to.eq('Wait2');
-            expect(results[1].id).to.eq('abc');
+            expect(results[1].id).to.eq('abc2');
             expect(results[1].status.status).to.eq('status');
         });
     });
