@@ -4,9 +4,9 @@ metadata:
   generateName: serval-run-
   namespace: pipelines
   annotations:
-    serval.dev/github-deployment-owner: "GijsvanDulmen"
-    serval.dev/github-deployment-repository: "tekton-serval"
-    serval.dev/github-deployment-installation-id: "17456888"
+    serval.dev/github-owner: "GijsvanDulmen"
+    serval.dev/github-repository: "tekton-serval"
+    serval.dev/github-installation-id: "17456888"
     serval.dev/wait-waitFor: "3"
 spec:
   timeout: "0h0m40s"
