@@ -9,10 +9,10 @@ metadata:
     serval.dev/github-checkrun-repository: "tekton-serval"
     serval.dev/github-checkrun-installation-id: "17456888"
     serval.dev/github-checkrun-url: "https://github.com/GijsvanDulmen/tekton-serval/$name"
-    serval.dev/github-checkrun-commit: '01cd2178e5fe92d6939a7f4c2267626756eccfbd'
+    serval.dev/github-checkrun-commit: 'a894f448156ed87c3ca139ae8363428a899ad67f'
 
     # create a checkrun for each of those tasks
-    # checkout: https://github.com/GijsvanDulmen/tekton-serval/runs/2912586397
+    # checkout: https://github.com/GijsvanDulmen/tekton-serval/runs/2912624939
     # to see an example for it
     serval.dev/check-run-tasks: 'fetch-repo,install-dependencies,run-test,run-lint,build-container'
     serval.dev/check-run: 'github-checkrun'
@@ -99,21 +99,21 @@ spec:
             value:
               - run
               - lint
-      # - name: build-container
-      #   taskRef:
-      #     name: kaniko
-      #   workspaces:
-      #     - name: source
-      #       workspace: shared-workspace
-      #     - name: dockerconfig
-      #       workspace: dockerconfig
-      #   runAfter:
-      #     - run-test
-      #     - run-lint
-      #   params:
-      #     - name: DOCKERFILE
-      #       value: ./app/controller/Dockerfile
-      #     - name: CONTEXT
-      #       value: ./app/controller/
-      #     - name: IMAGE
-      #       value: "ghcr.io/gijsvandulmen/serval-private:latest"
+      - name: build-container
+        taskRef:
+          name: kaniko
+        workspaces:
+          - name: source
+            workspace: shared-workspace
+          - name: dockerconfig
+            workspace: dockerconfig
+        runAfter:
+          - run-test
+          - run-lint
+        params:
+          - name: DOCKERFILE
+            value: ./app/controller/Dockerfile
+          - name: CONTEXT
+            value: ./app/controller/
+          - name: IMAGE
+            value: "ghcr.io/gijsvandulmen/serval:latest"
