@@ -36,7 +36,7 @@ only 1 change at a time. This is still experimental due to a lot of scenario's t
 - Locks are per namespace only for the provided name!
 
 The example of this can be found at:
-- [Lock/Unlock](./integration/tests/tests/)
+- [Lock/Unlock](./integration/tests/tests/run-lockwait.yaml)
 
 Checkout the `integration/tests/tests` directory for some examples on how to configure those tasks.
 
