@@ -30,7 +30,7 @@ Serval provides several ways of interacting with Slack:
 ## Experimental Lock/Unlock!
 You can use Lock/Unlock functionality to make pipeline runs wait for each other by asking for an exclusive lock
 for a certain name. Can be used to make sure there is only a single pipeline running. For example for deploying
-only 1 change at a time. This is still experimental due to a lot of scenario's to support. It should support:
+only 1 change at a time. This is still experimental due to a lot of scenario's to support. Currently it supports:
 - Cancellation/Timeouts of pipelines (releases lock).
 - Failing pipelines (releases lock).
 - Locks are per namespace only for the provided name!
