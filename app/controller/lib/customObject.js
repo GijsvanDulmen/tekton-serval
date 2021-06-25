@@ -24,6 +24,10 @@ module.exports = class CustomObject {
         start();
     }
 
+    isServalApiVersion(version) {
+        return version == "serval.dev/v1";
+    }
+
     /**
      * @returns {k8s.CoreV1Api}
      */

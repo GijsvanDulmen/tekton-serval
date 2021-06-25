@@ -126,6 +126,9 @@ describe('PipelineRunHandler', function () {
             
             let matched = false;
             prh.addSucceeded('slack', () => {}, {});
+            prh.addCancelled('slack', () => {}, {});
+            prh.addFailed('slack', () => {}, {});
+            prh.addStarted('slack', () => {}, {});
             
             prh.processForEachEvent({
                 metadata: {
@@ -176,5 +179,121 @@ describe('PipelineRunHandler', function () {
             
             expect(matched).to.eq(false);
         });
-    });    
+    });
+
+    describe('getAnnotationSplitted', function () {
+        it('should work for monitor-run', function () {
+            const prh = new PipelineRunHandler(kc, logger);
+
+            const results = prh.getMonitors({
+                metadata: {
+                    annotations: {
+                        "serval.dev/monitor-run": 'slack,teams'
+                    }
+                }
+            });
+            expect(results.length).to.eq(2);
+        });
+
+        it('should work for check-run', function () {
+            const prh = new PipelineRunHandler(kc, logger);
+
+            const results = prh.getCheckRun({
+                metadata: {
+                    annotations: {
+                        "serval.dev/check-run": 'slack,teams'
+                    }
+                }
+            });
+            expect(results.length).to.eq(2);
+        });
+
+        it('should work for check-run-tasks', function () {
+            const prh = new PipelineRunHandler(kc, logger);
+
+            const results = prh.getCheckRunTasks({
+                metadata: {
+                    annotations: {
+                        "serval.dev/check-run-tasks": 'slack,teams'
+                    }
+                }
+            });
+            expect(results.length).to.eq(2);
+        });
+    });
+
+
+    describe('convertPipelineRunToTasks', function() {
+        it('should work for task spec', function () {
+            const prh = new PipelineRunHandler(kc, logger);
+
+            const now = new Date();
+            const results = prh.convertPipelineRunToTasks({
+                metadata: {
+                    name: 'runname'
+                },
+                status: {
+                    startTime: now.toISOString(),
+                    conditions: [
+                        {
+                            status: 'Unknown',
+                            reason: 'Running'
+                        }
+                    ],
+                    runs: {
+                        'abc': {
+                            pipelineTaskName: 'taskname',
+                            status: {
+                                conditions: [
+                                    {
+                                        status: "status"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    pipelineSpec: {
+                        tasks: [
+                            {
+                                name: 'taskname',
+                                taskRef: {
+                                    apiVersion: 'serval.dev/v1',
+                                    kind: 'Wait',
+                                    params: [
+                                        { name: 'a', value: 'b' }
+                                    ]
+                                }
+                            },
+                            {
+                                name: 'taskname2',
+                                taskSpec: {
+                                    apiVersion: 'serval.dev/v1',
+                                    kind: 'Wait2',
+                                    spec: {
+                                        name: 'abc'
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            })
+
+            expect(results.length).to.eq(2);
+
+            expect(results[0].run).to.eq('runname');
+            expect(results[0].runStatus).to.eq('started');
+            expect(results[0].runStart).to.eq(now.getTime());
+            expect(results[0].kind).to.eq('Wait');
+            expect(results[0].id).to.eq('abc');
+            expect(results[0].status.status).to.eq('status');
+
+            expect(results[1].run).to.eq('runname');
+            expect(results[1].runStatus).to.eq('started');
+            expect(results[1].runStart).to.eq(now.getTime());
+            expect(results[1].kind).to.eq('Wait2');
+            expect(results[1].id).to.eq('abc');
+            expect(results[1].status.status).to.eq('status');
+        });
+    });
 });

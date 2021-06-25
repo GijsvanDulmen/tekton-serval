@@ -1,7 +1,5 @@
 const CustomObject = require('./customObject');
 
-const APIVERSION = "serval.dev/v1";
-
 module.exports = class CustomTaskHandler extends CustomObject {
     constructor(kc, logger) {
         super(kc, logger);
@@ -64,9 +62,9 @@ module.exports = class CustomTaskHandler extends CustomObject {
 
     isServalCustomTask(obj) {
         if ( obj && obj.spec ) {
-            if ( obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
+            if ( obj.spec.ref && this.isServalApiVersion(obj.spec.ref.apiVersion) ) {
                 return true;
-            } else if ( obj.spec.spec && obj.spec.spec.apiVersion == APIVERSION ) {
+            } else if ( obj.spec.spec && this.isServalApiVersion(obj.spec.spec.apiVersion) ) {
                 return true;
             }
         }
@@ -89,14 +87,14 @@ module.exports = class CustomTaskHandler extends CustomObject {
                 status = obj.status.conditions[0];
             }
             
-            if ( obj.spec.ref && obj.spec.ref.apiVersion == APIVERSION ) {
+            if ( obj.spec.ref && this.isServalApiVersion(obj.spec.ref.apiVersion) ) {
                 return {
                     kind: obj.spec.ref.kind,
                     status: status,
                     run: obj.metadata.labels["tekton.dev/pipelineRun"],
                     params: obj.spec.params == undefined ? [] : obj.spec.params
                 };
-            } else if ( obj.spec.spec && obj.spec.spec.apiVersion == APIVERSION ) {
+            } else if ( obj.spec.spec && this.isServalApiVersion(obj.spec.spec.apiVersion) ) {
                 const params = this.keyValueToNameValue(obj.spec.spec.spec);
                 params.forEach(param => {
                     if ( typeof param.value != 'string' ) {

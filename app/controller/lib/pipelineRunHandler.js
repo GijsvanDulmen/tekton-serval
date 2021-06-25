@@ -224,13 +224,13 @@ module.exports = class PipelineRunHandler extends CustomObject {
                 runStart: new Date(obj.status.startTime).getTime()
             }
             if ( task.taskRef != undefined ) {
-                if ( task.taskRef.apiVersion == 'serval.dev/v1' ) {
+                if ( this.isServalApiVersion(task.taskRef.apiVersion) ) {
                     generifiedTask.kind = task.taskRef.kind;
                     generifiedTask.params = this.keyValueToNameValue(task.params)
                     servalTasks.push(addStatus(generifiedTask, task.name));
                 }
             } else if ( task.taskSpec != undefined ) {
-                if ( task.taskSpec.apiVersion == 'serval.dev/v1' ) {
+                if ( this.isServalApiVersion(task.taskSpec.apiVersion) ) {
                     generifiedTask.kind = task.taskSpec.kind;
                     generifiedTask.params = task.taskSpec.spec;
                     servalTasks.push(addStatus(generifiedTask, task.name));

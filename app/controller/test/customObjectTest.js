@@ -69,6 +69,14 @@ describe('CustomTaskHandler', function () {
         });
     });
 
+    describe('isServalApiVersion', function () {
+        it('should match', function () {
+            const co = new CustomObject(kc, logger);
+            expect(co.isServalApiVersion("serval.dev/v2")).to.eq(false);
+            expect(co.isServalApiVersion("serval.dev/v1")).to.eq(true);
+        });
+    });
+
     describe('patchCustomTaskResource', function () {
         it('should patch custom task resource', function (done) {
             const co = new CustomObject(kc, logger);
