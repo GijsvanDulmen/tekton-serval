@@ -386,7 +386,6 @@ describe('CustomTaskHandler', function () {
                 expect(true).to.eq(false);
                 done();
             }).catch(err => {
-                console.log(err);
                 done();
             })
         });

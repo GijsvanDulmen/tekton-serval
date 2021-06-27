@@ -205,7 +205,8 @@ module.exports = class PipelineRunHandler extends CustomObject {
                             callback(servalTasks, item.metadata.name);
                         }
                     }).catch(err => {
-                        console.log(err);
+                        this.logger.error("could not list pipelineruns, correct rbac?");
+                        this.logger.error(err);
                     })
                 })
             }

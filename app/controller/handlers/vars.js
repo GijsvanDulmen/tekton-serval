@@ -11,7 +11,6 @@ module.exports = (handlers, runHandlers, logger) => {
     let vars = {};
 
     handlers.addHandler('SetVar', params => {
-        console.log(params);
         logger.info("setting var %s for %s in ns %s", params.name, params.runName, params.runNamespace);
         vars[params.runNamespace+"-"+params.name] = params.value;
         return Promise.resolve();
@@ -20,7 +19,6 @@ module.exports = (handlers, runHandlers, logger) => {
     ], 'vars');
 
     handlers.addHandler('GetVar', params => {
-        console.log(vars);
         logger.info("getting var %s for %s in ns %s", params.name, params.runName, params.runNamespace);
         if ( vars[params.runNamespace+"-"+params.name] != undefined ) {
             return Promise.resolve({ output: vars[params.runNamespace+"-"+params.name] });
