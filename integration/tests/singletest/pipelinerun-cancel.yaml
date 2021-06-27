@@ -1,0 +1,40 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+  annotations:
+    # annotate like this
+    serval.dev/pipelinerun-name: "cancelme"
+spec:
+  pipelineSpec:
+    tasks:
+    - name: wait
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: Wait
+      params:
+      - name: waitFor
+        value: "2000"
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+spec:
+  pipelineSpec:
+    tasks:
+    - name: cancel
+      taskRef:
+        apiVersion: serval.dev/v1
+        # use one of the following stop actions
+        # see https://tekton.dev/docs/pipelines/pipelineruns/#cancelling-a-pipelinerun
+        # for more details
+        kind: GracefullyStopPipeline
+        # kind: GracefullyCancelPipeline
+        # kind: CancelPipeline
+      params:
+      # and reference the same name in the stop action!
+      - name: name
+        value: cancelme

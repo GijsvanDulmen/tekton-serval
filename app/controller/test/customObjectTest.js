@@ -77,6 +77,13 @@ describe('CustomTaskHandler', function () {
         });
     });
 
+    describe('getPatchHeaders', function () {
+        it('should be correct', function () {
+            const co = new CustomObject(kc, logger);
+            expect(co.getPatchHeaders().headers['Content-type']).to.eq('application/json-patch+json');
+        });
+    });
+
     describe('replaceCommonVars', function () {
         it('should replace for pipelinerun', function () {
             const co = new CustomObject(kc, logger);

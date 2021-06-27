@@ -14,5 +14,5 @@ data:
   running-in-environment-with-injected-sidecars: "true"
   require-git-ssh-secret-known-hosts: "false"
   enable-tekton-oci-bundles: "false"
-  enable-custom-tasks: "true" # altered in comparison to default config
-  enable-api-fields: "stable"
+  enable-custom-tasks: "true" # altered - serval is about custom tasks :-)
+  enable-api-fields: "alpha" # altered - for gracefull stop/cancel of pipelines

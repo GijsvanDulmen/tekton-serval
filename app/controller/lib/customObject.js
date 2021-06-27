@@ -10,6 +10,10 @@ module.exports = class CustomObject {
         this.paramFetcher = new ParamFetcher();
     }
 
+    getPatchHeaders() {
+        return { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH}};
+    }
+
     watch(resource, handler) {
         const start = () => {
             this.logger.info("starting watch for %s", resource);
@@ -62,9 +66,7 @@ module.exports = class CustomObject {
     }
 
     patchCustomTaskResource(ns, name, patch) {
-        const options = { "headers": { "Content-type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH}};
-        
-        this.customObjectsApi.patchNamespacedCustomObjectStatus('tekton.dev', 'v1alpha1', ns, 'runs', name, patch, undefined, undefined, undefined, options).catch(err => {
+        this.customObjectsApi.patchNamespacedCustomObjectStatus('tekton.dev', 'v1alpha1', ns, 'runs', name, patch, undefined, undefined, undefined, this.getPatchHeaders()).catch(err => {
             this.logger.error("error patching run in %s on %s", ns, name);
             this.logger.error(err);
         });

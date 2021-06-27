@@ -1,7 +1,6 @@
-const checkrun = require('../handlers/github/checkrun');
 const CustomObject = require('./customObject');
 const TaskRunMonitor = require('./taskRunMonitor');
-
+const k8s = require('@kubernetes/client-node');
 module.exports = class PipelineRunHandler extends CustomObject {
     constructor(kc, logger) {
         super(kc, logger);
@@ -56,7 +55,7 @@ module.exports = class PipelineRunHandler extends CustomObject {
             }            
         });
 
-        this.watch("/apis/tekton.dev/v1alpha1/pipelineruns", (phase, obj) => {
+        this.watch("/apis/tekton.dev/v1beta1/pipelineruns", (phase, obj) => {
             if ( phase == 'ADDED' ) {
                 return;
             }
@@ -171,6 +170,25 @@ module.exports = class PipelineRunHandler extends CustomObject {
         });
     }
 
+    updateRunStatus(namespace, name, newStatus) {
+        const patch = [
+            {
+                op: "replace",
+                path: "/spec/status",
+                value: newStatus
+            }
+        ];
+        return this.getCustomObjectApi().patchNamespacedCustomObject('tekton.dev', 'v1beta1', namespace, 'pipelineruns', name, patch, undefined, undefined, undefined, this.getPatchHeaders())
+    }
+
+    getRunsForNamespace(namespace, callback) {
+        this.getCustomObjectApi().listNamespacedCustomObject("tekton.dev", "v1beta1", namespace, "pipelineruns").then(pipelineRuns => {
+            if ( pipelineRuns.body && pipelineRuns.body.items ) {
+                pipelineRuns.body.items.forEach(item => callback(item));
+            }
+        });
+    }
+
     /**
      * @param {function} callback 
      */
@@ -178,16 +196,17 @@ module.exports = class PipelineRunHandler extends CustomObject {
         this.getCoreApi().listNamespace().then(resp => {
             if ( resp.body && resp.body.items ) {
                 resp.body.items.forEach(item => {
-                    this.getCustomObjectApi().listNamespacedCustomObject("tekton.dev", "v1alpha1", item.metadata.name, "pipelineruns").then(pipelineRuns => {
+                    this.getCustomObjectApi().listNamespacedCustomObject("tekton.dev", "v1beta1", item.metadata.name, "pipelineruns").then(pipelineRuns => {
                         if ( pipelineRuns.body && pipelineRuns.body.items ) {
                             let servalTasks = [].concat(...pipelineRuns.body.items.map(pipelineRun => this.convertPipelineRunToTasks(pipelineRun)));
-
                             if ( filter != undefined ) {
                                 servalTasks = servalTasks.filter(t => filter.indexOf(t.kind) != -1);
                             }
                             callback(servalTasks, item.metadata.name);
                         }
-                    });
+                    }).catch(err => {
+                        console.log(err);
+                    })
                 })
             }
         });

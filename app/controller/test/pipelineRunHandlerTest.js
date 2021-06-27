@@ -306,4 +306,122 @@ describe('PipelineRunHandler', function () {
             expect(results[1].status.status).to.eq('status');
         });
     });
+
+    describe('updateRunStatus', function () {
+        it('should work updating status', function (done) {
+            const prh = new PipelineRunHandler(kc, logger);
+            prh.customObjectsApi = {
+                patchNamespacedCustomObject: (group, version, ns, type, name, patch, a, b, c, options) => {
+                    expect(group).to.eq('tekton.dev');
+                    expect(version).to.eq('v1beta1');
+                    expect(type).to.eq('pipelineruns');
+                    expect(ns).to.eq('ns1');
+                    expect(name).to.eq('name1');
+                    expect(patch[0].value).to.eq('Cancelled');
+                    done();
+                }
+            }
+            prh.updateRunStatus('ns1', 'name1', 'Cancelled');
+        });
+    });
+
+    describe('getRunsForNamespace', function () {
+        it('should work updating status', function (done) {
+            const prh = new PipelineRunHandler(kc, logger);
+            prh.customObjectsApi = {
+                listNamespacedCustomObject: (group, version, ns, type) => {
+                    expect(group).to.eq('tekton.dev');
+                    expect(version).to.eq('v1beta1');
+                    expect(type).to.eq('pipelineruns');
+                    expect(ns).to.eq('ns1');
+                    return Promise.resolve({
+                        body: {
+                            items: [
+                                { item: 'a' }
+                            ]
+                        }
+                    });
+                }
+            }
+            prh.getRunsForNamespace('ns1', item => {
+                expect(item.item).to.eq('a');
+                done();
+            })
+        });
+    });
+
+    describe('getRunsPerNamespace', function () {
+        it('should work updating status', function (done) {
+            const prh = new PipelineRunHandler(kc, logger);
+            prh.coreApi = {
+                listNamespace: () => {
+                    return Promise.resolve({
+                        body: {
+                            items: [
+                                {
+                                    metadata: {
+                                        name: 'ns1'
+                                    }
+                                }
+                            ]
+                        }
+                    })
+                }
+            };
+            prh.customObjectsApi = {
+                listNamespacedCustomObject: (group, version, ns, type) => {
+                    expect(group).to.eq('tekton.dev');
+                    expect(version).to.eq('v1beta1');
+                    expect(type).to.eq('pipelineruns');
+                    expect(ns).to.eq('ns1');
+
+                    return Promise.resolve({
+                        body: {
+                            items: [
+                                {
+                                    metadata: {
+                                        name: 'run1'
+                                    },
+                                    status: {
+                                        runs: {
+                                            'abc': {
+                                                pipelineTaskName: 'taskname',
+                                                status: {
+                                                    conditions: [
+                                                        {
+                                                            status: "status"
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        },
+                                        pipelineSpec: {
+                                            tasks: [
+                                                {
+                                                    name: 'taskname',
+                                                    taskRef: {
+                                                        apiVersion: 'serval.dev/v1',
+                                                        kind: 'Wait',
+                                                        params: [
+                                                            { name: 'a', value: 'b' }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    });
+                }
+            }
+            prh.getRunsPerNamespace(item => {
+                expect(item[0].run).to.eq('run1');
+                expect(item[0].status.status).to.eq('status');
+                expect(item[0].runStatus).to.eq('unknown');
+                done();
+            }, ['Wait'])
+        });
+    });
 });

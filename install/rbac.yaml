@@ -26,7 +26,7 @@ rules:
   verbs: ["get", "list", "watch", "update", "patch"]
 - apiGroups: ['*']
   resources: ['pipelineruns']
-  verbs: ["get", "list", "watch"]
+  verbs: ["get", "list", "watch", "update", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
