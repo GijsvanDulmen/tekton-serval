@@ -1,0 +1,44 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+spec:
+  pipelineSpec:
+    tasks:
+    - name: start-timing
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: StartTiming
+      params:
+        - name: name
+          value: "timing-a"
+    - name: wait
+      runAfter:
+      - start-timing
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: Wait
+      params:
+      - name: waitFor
+        value: "5"
+    - name: get-timing
+      runAfter:
+      - wait
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: GetTiming
+      params:
+        - name: name
+          value: "timing-a"
+    - name: slack-notificaiton
+      runAfter:
+      - get-timing
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackWrite
+      params:
+      - name: channel
+        value: "#serval"
+      - name: message
+        value: "Result: $(tasks.get-timing.results.output) - $(tasks.get-timing.results.seconds)"

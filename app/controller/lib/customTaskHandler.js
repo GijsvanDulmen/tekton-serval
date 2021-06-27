@@ -133,8 +133,7 @@ module.exports = class CustomTaskHandler extends CustomObject {
 
                     try {
                         let run = this.generifyCustomTask(obj);
-                        if ( this.handlers[run.kind] ) {
-
+                        if ( this.handlers[run.kind] != undefined ) {
                             let prefix = this.handlerPrefix[run.kind];
                             this.getParameters(run.kind, prefix, run, obj, params => {
                                 this.handlers[run.kind](params, this.customObjectsApi).then(results => {
@@ -156,7 +155,7 @@ module.exports = class CustomTaskHandler extends CustomObject {
                                 this.updateCustomTaskWithErrorMessageWithObj(obj, err.message);
                             })
                         } else {
-                            this.updateCustomTaskWithErrorMessageWithObj(obj, "Unknown handler specified");
+                            this.updateCustomTaskWithErrorMessageWithObj(obj, "Unknown handler ["+run.kind+"] specified");
                         }
                     } catch(err) {
                         this.updateCustomTaskWithErrorMessageWithObj(obj, err.message);

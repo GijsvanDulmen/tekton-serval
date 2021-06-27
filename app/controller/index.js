@@ -22,6 +22,7 @@ const authWatcher = new AuthorizationWatcher(kc, logger);
 require('./handlers/microsoft-teams')(handlers, runHandlers, logger);
 require('./handlers/wait')(handlers, runHandlers, logger);
 require('./handlers/vars')(handlers, runHandlers, logger);
+require('./handlers/timing')(handlers, runHandlers, logger);
 require('./handlers/pipelinerun')(handlers, runHandlers, logger);
 require('./handlers/lock/lock')(handlers, runHandlers, logger);
 

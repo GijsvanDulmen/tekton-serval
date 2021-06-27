@@ -1,5 +1,4 @@
 const CustomTaskHandler = require('../lib/customTaskHandler');
-const { add } = require('../lib/logger');
 const PipelineRunHandler = require('../lib/pipelineRunHandler');
 
 /**
@@ -42,7 +41,6 @@ module.exports = (handlers, runHandlers, logger) => {
                             output: newValue
                         }))
                         .catch(err => {
-                            console.log(err);
                             rej("could not add to: " + params.name);
                         })
                 })
