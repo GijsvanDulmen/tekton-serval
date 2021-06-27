@@ -113,6 +113,17 @@ module.exports = class CustomTaskHandler extends CustomObject {
         return {};   
     }
 
+    formatMissingTaskMessage(runKind, params) {
+        let missing = [];
+        this.paramSpecs[runKind].forEach(paramSpec => {
+            if ( params[paramSpec.name] == undefined ) {
+                missing.push(paramSpec.name);
+            }
+        });
+
+        return "Parameters [" + missing.join(', ') + "] missing, consult documentation";
+    }
+
     start() {
         this.watch("/apis/tekton.dev/v1alpha1/runs", (phase, obj) => {            
             if ( phase == 'ADDED' ) {
@@ -120,77 +131,79 @@ module.exports = class CustomTaskHandler extends CustomObject {
                     // console.log(JSON.stringify(obj, null, 2));
                     // console.log('-----');
 
-                    let run;
                     try {
-                        run = this.generifyCustomTask(obj);
-                    } catch(err) {
-                        const patch = this.getFailurePatch(err.message);
-                        this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
-                        return;
-                    }
-                    
-                    if ( this.handlers[run.kind] ) {
-                        let params = {};
-                        let prefix = this.handlerPrefix[run.kind];
+                        let run = this.generifyCustomTask(obj);
+                        if ( this.handlers[run.kind] ) {
 
-                        // check if there are secrets needed
-                        this.fetchSecretIfNeeded(this.paramSpecs[run.kind], obj.metadata.namespace).then(secret => {
-                            this.paramSpecs[run.kind].forEach(paramSpec => {
-                                if ( paramSpec.sources == undefined ) {
-                                    paramSpec.sources = ['pipelinerun', 'taskparam'];
-                                }
-                            
-                                params = this.getParamFetcher().getParam(prefix, paramSpec, params, secret, obj.metadata, obj.spec);
-                                
-                                // explicit task params
-                                params = this.getFromTaskSpec(paramSpec, params, run);
-
-                                if ( params[paramSpec.name] != undefined && paramSpec.replace ) {
-                                    params[paramSpec.name] = this.replaceCommonVars(obj, params[paramSpec.name]);
-                                }
-                            });
-
-                            // check if all params are there
-                            if ( this.paramSpecs[run.kind].length != Object.keys(params).length ) {
-                                let missing = [];
-                                this.paramSpecs[run.kind].forEach(paramSpec => {
-                                    if ( params[paramSpec.name] == undefined ) {
-                                        missing.push(paramSpec.name);
+                            let prefix = this.handlerPrefix[run.kind];
+                            this.getParameters(run.kind, prefix, run, obj, params => {
+                                this.handlers[run.kind](params, this.customObjectsApi).then(results => {
+                                    if ( results == false ) {
+                                        this.logger.info("not updating results for " + run.kind);
+                                        return;
                                     }
-                                });
-
-                                const patch = this.getFailurePatch("Parameters " + missing.join(',') + " missing, consult documentation");
-                                this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
-                                return;
-                            }
-
-                            // add some default params
-                            params.runNamespace = obj.metadata.namespace;
-                            params.runName = obj.metadata.name;
-
-                            this.handlers[run.kind](params, this.customObjectsApi).then(results => {
-                                if ( results == false ) {
-                                    this.logger.info("not updating results for " + run.kind);
-                                    return;
-                                }
-
-                                let taskResults = this.keyValueToNameValue(results);
-                                
-                                const patch = this.getSuccessPatch(taskResults);
-                                this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
+    
+                                    let taskResults = this.keyValueToNameValue(results);
+                                    
+                                    const patch = this.getSuccessPatch(taskResults);
+                                    this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
+                                }).catch(err => {
+                                    this.logger.error("error executing %s in %s for %s", run.kind, obj.metadata.namespace, obj.metadata.name);
+                                    this.logger.error(err);
+                                    this.updateCustomTaskWithErrorMessageWithObj(obj, typeof err == 'string' ? err : "Failed");
+                                })
                             }).catch(err => {
-                                this.logger.error("error executing %s in %s for %s", run.kind, obj.metadata.namespace, obj.metadata.name);
-                                this.logger.error(err);
-                                const patch = typeof err == 'string' ? this.getFailurePatch(err) : this.getFailurePatch("Failed");
-                                this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
+                                this.updateCustomTaskWithErrorMessageWithObj(obj, err.message);
                             })
-                        });
-                    } else {
-                        const patch = this.getFailurePatch("Unknown handler specified");
-                        this.patchCustomTaskResource(obj.metadata.namespace, obj.metadata.name, patch);
+                        } else {
+                            this.updateCustomTaskWithErrorMessageWithObj(obj, "Unknown handler specified");
+                        }
+                    } catch(err) {
+                        this.updateCustomTaskWithErrorMessageWithObj(obj, err.message);
                     }
                 }
             }
+        });
+    }
+
+    updateCustomTaskWithErrorMessageWithObj(obj, message) {
+        this.updateCustomTaskWithErrorMessage(obj.metadata.namespace, obj.metadata.name, message);
+    }
+
+    updateCustomTaskWithErrorMessage(namespace, name, message) {
+        const patch = this.getFailurePatch(message);
+        this.patchCustomTaskResource(namespace, name, patch);
+    }
+
+    getParameters(handlerName, prefix, run, obj, callback) {
+        return this.fetchSecretIfNeeded(this.paramSpecs[handlerName], obj.metadata.namespace).then(secret => {
+            let params = {};
+            
+            this.paramSpecs[handlerName].forEach(paramSpec => {
+                if ( paramSpec.sources == undefined ) {
+                    paramSpec.sources = ['pipelinerun', 'taskparam'];
+                }
+            
+                params = this.getParamFetcher().getParam(prefix, paramSpec, params, secret, obj.metadata, obj.spec);
+                
+                // explicit task params
+                params = this.getFromTaskSpec(paramSpec, params, run);
+
+                if ( params[paramSpec.name] != undefined && paramSpec.replace ) {
+                    params[paramSpec.name] = this.replaceCommonVars(obj, params[paramSpec.name]);
+                }
+            });
+
+            // check if all params are there
+            if ( this.paramSpecs[handlerName].length != Object.keys(params).length ) {
+                throw new Error(this.formatMissingTaskMessage(handlerName, params));
+            }
+
+            // add some default params
+            params.runNamespace = obj.metadata.namespace;
+            params.runName = obj.metadata.name;
+
+            callback(params);
         });
     }
 }

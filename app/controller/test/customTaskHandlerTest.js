@@ -97,6 +97,11 @@ describe('CustomTaskHandler', function () {
             expect(generified.run).to.eq("runA");
         });
 
+        it('should generify nothing', function () {
+            const generified = cth.generifyCustomTask({})
+            expect(Object.keys(generified).length).to.eq(0)
+        });
+
         it('should work without status part', function () {
             const metadata = {
                 labels: {
@@ -276,5 +281,144 @@ describe('CustomTaskHandler', function () {
         });
     });
 
+    describe('formatMissingTaskMessage', function() {
+        
+        it('should format message correctly', function () {
+            const cth = new CustomTaskHandler(kc, logger);
+            cth.addHandler('slack', () => {}, [
+                { name: 'item' }
+            ], 'prefix');
+            const output = cth.formatMissingTaskMessage('slack', {});
+            expect(output).to.eq('Parameters [item] missing, consult documentation')
+        });
 
+        it('should format message correctly', function () {
+            const cth = new CustomTaskHandler(kc, logger);
+            cth.addHandler('slack', () => {}, [
+                { name: 'item' }, { name: 'item2' },
+            ], 'prefix');
+            const output = cth.formatMissingTaskMessage('slack', {});
+            expect(output).to.eq('Parameters [item, item2] missing, consult documentation')
+        });
+    });
+
+    describe('getParameters', function() {
+        it('should get parameters correctly', function(done) {
+            const cth = new CustomTaskHandler(kc, logger);
+            cth.fetchSecretIfNeeded = (paramSpecs, ns1) => Promise.resolve({});
+
+            cth.addHandler('slack', () => {}, [
+                { name: 'item', sources: ['namespace-secret', 'taskparam', 'pipelinerun'] }
+            ], 'slack');
+
+            cth.getParameters('slack', 'slack', {
+                run: {
+
+                }
+            }, {
+                metadata: {
+                    name: 'run1',
+                    namespace: 'ns1',
+                    annotations: {
+                        'serval.dev/slack-item': 'abc'
+                    }
+                }
+            }, params => {
+                expect(params.item).to.eq('abc');
+                expect(params.runNamespace).to.eq('ns1');
+                expect(params.runName).to.eq('run1');
+                done();
+            }).catch(err => {
+                expect(true).to.eq(false);
+                done();
+            })
+        });
+
+        it('should default to pipelinerun params', function(done) {
+            const cth = new CustomTaskHandler(kc, logger);
+            cth.fetchSecretIfNeeded = (paramSpecs, ns1) => Promise.resolve({});
+
+            cth.addHandler('slack', () => {}, [
+                { name: 'item', replace: true }
+            ], 'slack');
+
+            cth.getParameters('slack', 'slack', {
+                run: {
+
+                }
+            }, {
+                metadata: {
+                    name: 'run1',
+                    namespace: 'ns1',
+                    annotations: {
+                        'serval.dev/slack-item': 'abc'
+                    }
+                }
+            }, params => {
+                expect(params.item).to.eq('abc');
+                expect(params.runNamespace).to.eq('ns1');
+                expect(params.runName).to.eq('run1');
+                done();
+            }).catch(err => {
+                expect(true).to.eq(false);
+                done();
+            })
+        });
+
+        it('should not process missing params', function(done) {
+            const cth = new CustomTaskHandler(kc, logger);
+            cth.fetchSecretIfNeeded = (paramSpecs, ns1) => Promise.resolve({});
+
+            cth.addHandler('slack', () => {}, [
+                { name: 'item', replace: true }
+            ], 'slack');
+
+            cth.getParameters('slack', 'slack', {
+                run: {
+
+                }
+            }, {
+                metadata: {
+                    name: 'run1',
+                    namespace: 'ns1'
+                }
+            }, params => {
+                expect(true).to.eq(false);
+                done();
+            }).catch(err => {
+                console.log(err);
+                done();
+            })
+        });
+    });
+
+
+    describe('updateCustomTaskWithErrorMessage', function() {
+        it('should work with obj', function(done) {
+            const cth = new CustomTaskHandler(kc, logger);
+            cth.patchCustomTaskResource = (ns, name, patch) => {
+                expect(ns).to.eq('ns1');
+                expect(name).to.eq('name1');
+                expect(patch[0].value.conditions[0].message).to.eq('err1');
+                done();
+            };
+            cth.updateCustomTaskWithErrorMessageWithObj({
+                metadata: {
+                    namespace: 'ns1',
+                    name: 'name1'
+                }
+            }, 'err1')
+        });
+
+        it('should work without obj', function(done) {
+            const cth = new CustomTaskHandler(kc, logger);
+            cth.patchCustomTaskResource = (ns, name, patch) => {
+                expect(ns).to.eq('ns1');
+                expect(name).to.eq('name1');
+                expect(patch[0].value.conditions[0].message).to.eq('err1');
+                done();
+            };
+            cth.updateCustomTaskWithErrorMessage('ns1', 'name1', 'err1')
+        });
+    });
 });
