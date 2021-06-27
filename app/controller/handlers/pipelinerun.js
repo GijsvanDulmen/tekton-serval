@@ -12,6 +12,11 @@ module.exports = (handlers, runHandlers, logger) => {
         runHandlers.getRunsForNamespace(runNamespace, run => {
             // filter out our own run
             if ( run.metadata.name != runName ) {
+                // if already stopped don't process
+                if ( run.status && run.status.completionTime ) {
+                    return;
+                }
+
                 // check annotations
                 if ( run.metadata.annotations ) {
                     Object.keys(run.metadata.annotations).forEach(key => {
