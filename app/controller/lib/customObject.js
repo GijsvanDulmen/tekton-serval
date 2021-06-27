@@ -44,6 +44,29 @@ module.exports = class CustomObject {
         return version == "serval.dev/v1";
     }
 
+    patchFieldInConfigmap(name, namespace, field, value) {
+        const patch = [
+            {
+                op: "replace",
+                path: "/data/"+field,
+                value: value
+            }
+        ];
+        return this.getCoreApi().patchNamespacedConfigMap(name, namespace, patch, undefined, undefined, undefined, undefined, this.getPatchHeaders());
+    }
+
+    getFieldFromConfigmap(name, namespace, field) {
+        return new Promise((res, rej) => {
+            this.getCoreApi().readNamespacedConfigMap(name, namespace).then(resp => {
+                if ( resp.body && resp.body.data && resp.body.data[field] ) {
+                    res(resp.body.data[field]);
+                } else {
+                    rej('no such field');
+                }
+            })
+        });
+    }
+
     /**
      * @returns {k8s.CoreV1Api}
      */

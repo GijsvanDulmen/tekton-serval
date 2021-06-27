@@ -1,0 +1,45 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+spec:
+  pipelineSpec:
+    tasks:
+    - name: increment
+      taskSpec:
+        apiVersion: serval.dev/v1
+        kind: IncrementVar
+        spec:
+          name: "incrementer"
+    - name: slack-increment-notify
+      runAfter:
+      - increment
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackWrite
+      params:
+      - name: channel
+        value: "#serval"
+      - name: message
+        value: "Increment: $(tasks.increment.results.output)"
+    - name: decrement
+      runAfter:
+      - increment
+      taskSpec:
+        apiVersion: serval.dev/v1
+        kind: DecrementVar
+        spec:
+          name: "incrementer"
+    - name: slack-decrement-notify
+      runAfter:
+      - decrement
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackWrite
+      params:
+      - name: channel
+        value: "#serval"
+      - name: message
+        value: "Decrement: $(tasks.decrement.results.output)"
+    

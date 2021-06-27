@@ -1,4 +1,5 @@
 const CustomTaskHandler = require('../lib/customTaskHandler');
+const { add } = require('../lib/logger');
 const PipelineRunHandler = require('../lib/pipelineRunHandler');
 
 /**
@@ -7,24 +8,60 @@ const PipelineRunHandler = require('../lib/pipelineRunHandler');
  * @param {PipelineRunHandler} runHandlers 
  */
 module.exports = (handlers, runHandlers, logger) => {
-
-    let vars = {};
-
     handlers.addHandler('SetVar', params => {
         logger.info("setting var %s for %s in ns %s", params.name, params.runName, params.runNamespace);
-        vars[params.runNamespace+"-"+params.name] = params.value;
-        return Promise.resolve();
+        return handlers.patchFieldInConfigmap('serval-vars', params.runNamespace, params.name, params.value)
+            .then(() => {});
     }, [
         { name: 'name' }, { name: 'value' }
     ], 'vars');
 
     handlers.addHandler('GetVar', params => {
         logger.info("getting var %s for %s in ns %s", params.name, params.runName, params.runNamespace);
-        if ( vars[params.runNamespace+"-"+params.name] != undefined ) {
-            return Promise.resolve({ output: vars[params.runNamespace+"-"+params.name] });
-        } else {
-            return Promise.reject("no variable available for: " + params.name)
-        }
+
+        return new Promise((res, rej) => {
+            handlers.getFieldFromConfigmap('serval-vars', params.runNamespace, params.name)
+                .then(value => {
+                    res({ output: value })
+                })
+                .catch(err => {
+                    rej("no variable available for: " + params.name);
+                })
+        });
+    }, [
+        { name: 'name' }
+    ], 'vars');
+
+    numericAdd = (toAdd, params) => {
+        return new Promise((res, rej) => {
+            handlers.getFieldFromConfigmap('serval-vars', params.runNamespace, params.name)
+                .then(value => {
+                    const newValue = (parseInt(value)+toAdd).toString();
+                    handlers.patchFieldInConfigmap('serval-vars', params.runNamespace, params.name, newValue)
+                        .then(() => res({
+                            output: newValue
+                        }))
+                        .catch(err => {
+                            console.log(err);
+                            rej("could not add to: " + params.name);
+                        })
+                })
+                .catch(err => {
+                    rej("no variable available for: " + params.name);
+                })
+        });
+    };
+
+    handlers.addHandler('IncrementVar', params => {
+        logger.info("increment var %s for %s in ns %s", params.name, params.runName, params.runNamespace);
+        return numericAdd(1, params);
+    }, [
+        { name: 'name' }
+    ], 'vars');
+
+    handlers.addHandler('DecrementVar', params => {
+        logger.info("decrement var %s for %s in ns %s", params.name, params.runName, params.runNamespace);
+        return numericAdd(-1, params);
     }, [
         { name: 'name' }
     ], 'vars');
