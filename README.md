@@ -30,6 +30,9 @@ Serval provides several ways of interacting with Slack:
 ## PipelineRun Cancellation
 - [Cancel/Stop (Gracefully) a pipeline run](/integration/tests/tests/pipelinerun-cancel.yaml)
 
+## Simple variables
+- [Get/Set variable (not persistent after controller reboot)](/integration/tests/tests/get-set-var.yaml)
+
 ## Experimental Lock/Unlock!
 You can use Lock/Unlock functionality to make pipeline runs wait for each other by asking for an exclusive lock
 for a certain name. Can be used to make sure there is only a single pipeline running. For example for deploying

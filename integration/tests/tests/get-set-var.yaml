@@ -1,0 +1,34 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: serval-run-
+  namespace: pipelines
+spec:
+  pipelineSpec:
+    tasks:
+    - name: set-var
+      taskSpec:
+        apiVersion: serval.dev/v1
+        kind: SetVar
+        spec:
+          name: "variable-name"
+          value: "variable-value"
+    - name: get-var
+      runAfter:
+      - set-var
+      taskSpec:
+        apiVersion: serval.dev/v1
+        kind: GetVar
+        spec:
+          name: "variable-name"
+    - name: slack-notificaiton
+      runAfter:
+      - get-var
+      taskRef:
+        apiVersion: serval.dev/v1
+        kind: SlackWrite
+      params:
+      - name: channel
+        value: "#serval"
+      - name: message
+        value: "Result: $(tasks.get-var.results.output)"
