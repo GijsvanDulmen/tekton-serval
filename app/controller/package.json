@@ -11,7 +11,7 @@
   "license": "Mozilla Public License 2.0",
   "dependencies": {
     "@kubernetes/client-node": "^0.14.0",
-    "@octokit/app": "^12.0.3",
+    "@octokit/app": "^13.0.10",
     "@octokit/auth-app": "^3.4.1",
     "@slack/socket-mode": "^1.1.0",
     "@slack/web-api": "^6.2.4",
